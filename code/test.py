@@ -9,7 +9,7 @@ root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 # Add a path to the data folder
 sys.path.append(os.path.join(root_directory, "data"))
 
-from main import planckFunction, dustSurfaceDensity, dustOpticalDepth, diskTemperature, thermalIntensity
+from main import planckFunction, dustSurfaceDensityBroken, dustOpticalDepth, diskTemperature, thermalIntensity
 
 if __name__ == "__main__":
 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     plt.ylabel("Intensity")
 
 
-    # Test dustSurfaceDensity
+    # Test dustSurfaceDensityBroken
 
     Rinner = 2 # AU
     Router = 200 # AU
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     densities = []
 
     for radius in radii:
-        densities.append(dustSurfaceDensity(radius))
+        densities.append(dustSurfaceDensityBroken(radius))
 
     plt.figure("dustSurfaceDensity", figsize = (10, 5))
 
@@ -97,8 +97,8 @@ if __name__ == "__main__":
     # Test thermalIntensity
 
     frequency = 365.5e9 # Hz
-    inclination = 0.3*np.pi # [0, np.pi/2]
-    Rinner = 2 # AU
+    inclination = 0.0*np.pi # [0, np.pi/2]
+    Rinner = 1 # AU
     Router = 200 # AU
 
     radii = np.linspace(Rinner, Router, 1000)
@@ -111,7 +111,7 @@ if __name__ == "__main__":
 
     plt.plot(radii, thermal_intensities)
 
-    plt.title(f"thermalIntensity, v = {frequency/1e9}GHz, i = {inclination/np.pi}π")
+    plt.title(f"Thermal continuum, v = {frequency/1e9}GHz, i = {inclination/np.pi}π")
     plt.xlabel("Radius [AU]")
     plt.ylabel("Intensity")
 
