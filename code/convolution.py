@@ -27,8 +27,8 @@ if __name__ == "__main__":
     ax1 = plt.subplot(1, 3, 1)
     ax1.imshow(image, cmap="inferno")
     ax1.set_title("Original")
-    ax1.set_xlabel("X [AU]")
-    ax1.set_ylabel("Y [AU]")
+    ax1.set_xlabel("X [pixels]")
+    ax1.set_ylabel("Y [pixels]")
 
     ax2 = plt.subplot(1, 3, 2)
     ax2.imshow(kernel, interpolation="none")
@@ -39,8 +39,8 @@ if __name__ == "__main__":
     ax3 = plt.subplot(1, 3, 3)
     ax3.imshow(convolved_image, cmap="inferno")
     ax3.set_title("Convolved")
-    ax3.set_xlabel("X [AU]")
-    ax3.set_ylabel("Y [AU]")
+    ax3.set_xlabel("X [pixels]")
+    ax3.set_ylabel("Y [pixels]")
 
     plt.savefig(figures_directory + pyName() + ".png")
 

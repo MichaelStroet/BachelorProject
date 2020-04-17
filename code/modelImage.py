@@ -34,8 +34,8 @@ def plotImage(image):
     plt.imshow(image, cmap="inferno")
 
     plt.title("Thermal Continuum disk")
-    plt.xlabel("X [AU]")
-    plt.ylabel("Y [AU]")
+    plt.xlabel("X [pixels]")
+    plt.ylabel("Y [pixels]")
 
     cbar = plt.colorbar()
     cbar.set_label("Intensity")
