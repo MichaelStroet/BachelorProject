@@ -4,8 +4,7 @@ import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-from astropy.convolution import Gaussian2DKernel
-from astropy.convolution import convolve
+from astropy.convolution import convolve, Gaussian2DKernel
 
 from modelImage import *
 
@@ -18,8 +17,8 @@ def pyName():
 
 if __name__ == "__main__":
 
-    image = loadImageTXT("image.txt")
-    kernel = Gaussian2DKernel(x_stddev = 10, y_stddev = 5, theta = np.pi/2)
+    image, pixelDimension, pixelSize = loadImageTXT("image.txt")
+    kernel = Gaussian2DKernel(x_stddev = 10, y_stddev = 8, theta = np.pi/3)
 
     convolved_image = convolve(image, kernel)
 
