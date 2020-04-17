@@ -9,13 +9,13 @@ from equations import thermalIntensity
 root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 data_directory = root_directory + "\\data\\"
 
-def getImageMatrix(v, inc, R_in, R_out):
+def getImageMatrix(v, inc, R_in, R_out, pixelDimension):
     """
     Generates a numpy matrix of continuum intensities for plotting the disk.
     v is given in Hz, inc in radians [0, π/2] and R_in/R_out in AU.
     """
 
-    coords = np.linspace(-R_out, R_out, 1000)
+    coords = np.linspace(-R_out, R_out, pixelDimension)
     matrix = np.zeros((len(coords), len(coords)))
 
     for i, x in enumerate(coords):
@@ -47,20 +47,27 @@ def saveImagePNG(image, filename):
     plotImage(image)
     plt.savefig(data_directory + filename)
 
-def saveImageTXT(image, filename):
+def saveImageTXT(image, pixelDimension, R_outer, filename):
     """
     Saves the image as a txt file of the numpy array.
     """
 
-    np.savetxt(data_directory + filename, image)
+    # Get the size per pixel in AU
+    pixelSize = (2*R_outer) / pixelDimension
+
+    # Save the image as a txt file with the pixelDimension and pixelSize in the header
+    np.savetxt(data_directory + filename, image, fmt = "%.5e", header = f"{pixelDimension}, {pixelSize}")
 
 def loadImageTXT(filename):
     """
     Loads an image saved as a txt file.
     """
 
-    image = np.loadtxt(data_directory + filename)
-    return image
+    with open(data_directory + filename) as file:
+        header_data = file.readline().replace(" ", "").strip("#\n").split(",")
+        image = np.loadtxt(data_directory + filename)
+
+    return image, int(header_data[0]), float(header_data[1])
 
 if __name__ == "__main__":
 
@@ -68,8 +75,11 @@ if __name__ == "__main__":
     frequency = 365.5e9 # Hz
     inclination = 0.0*np.pi # [0, np.pi/2]
     R_inner = 1 # AU
-    R_outer = 200 # AU
+    R_outer = 80 # AU
+    pixelDimension = 500
 
-    image = getImageMatrix(frequency, inclination, R_inner, R_outer)
-    plotImage(image)
+    image = getImageMatrix(frequency, inclination, R_inner, R_outer, pixelDimension)
+    saveImagePNG(image, "image.png")
+    saveImageTXT(image, pixelDimension, R_outer, "image.txt")
+
     plt.show()
