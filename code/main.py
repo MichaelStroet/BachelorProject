@@ -17,7 +17,7 @@ if __name__ == "__main__":
     frequency = 365.5e9 # Hz
     inclination = 0.0*np.pi # [0, np.pi/2]
     R_inner = 1 # AU
-    R_outer = 80 # AU
+    R_outer = 100 # AU
     pixelDimension = 500
 
     image = getImageMatrix(frequency, inclination, R_inner, R_outer, pixelDimension)

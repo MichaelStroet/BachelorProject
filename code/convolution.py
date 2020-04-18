@@ -29,7 +29,7 @@ if __name__ == "__main__":
     root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     figures_directory = root_directory + "\\data\\codeFigures\\"
 
-    image, pixelDimension, pixelSize = loadImageTXT("image.txt")
+    image, (pixelDimension, pixelSize) = loadImageTXT("image.txt")
 
     sigma_x = 15
     sigma_y = 7
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     convolved_image = convolveImageGaussian2D(image, sigma_x, sigma_y, theta)
     kernel = Gaussian2DKernel(sigma_x, sigma_y, theta)
 
-    plt.figure("image convolution", figsize=(12, 6))
+    plt.figure("image convolution", figsize=(15, 6))
 
     ax1 = plt.subplot(1, 3, 1)
     ax1.imshow(image, cmap="inferno")
