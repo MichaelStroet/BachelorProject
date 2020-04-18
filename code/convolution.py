@@ -8,21 +8,37 @@ from astropy.convolution import convolve, Gaussian2DKernel
 
 from modelImage import *
 
-root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-data_directory = root_directory + "\\data\\"
-figures_directory = data_directory + "codeFigures\\"
+def convolveImageGaussian2D(image, sigma_x, sigma_y = 1, theta = 0):
+    """
+    Convolve the image with a 2D Gaussian kernel.
+    image is a nd numpy array,
+    sigma x and y are the pre-rotation standard deviations,
+    theta is the rotation angle in radians.
+    """
 
-def pyName():
-    return __file__.split("\\")[-1].replace(".py", "")
+    kernel = Gaussian2DKernel(sigma_x, sigma_y, theta)
+    convolved_image = convolve(image, kernel)
+
+    return convolved_image
 
 if __name__ == "__main__":
 
+    def pyName():
+        return __file__.split("\\")[-1].replace(".py", "")
+
+    root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    figures_directory = root_directory + "\\data\\codeFigures\\"
+
     image, pixelDimension, pixelSize = loadImageTXT("image.txt")
-    kernel = Gaussian2DKernel(x_stddev = 10, y_stddev = 8, theta = np.pi/3)
 
-    convolved_image = convolve(image, kernel)
+    sigma_x = 15
+    sigma_y = 7
+    theta = np.pi / 3
 
-    plt.figure(1, figsize=(12, 6)).clf()
+    convolved_image = convolveImageGaussian2D(image, sigma_x, sigma_y, theta)
+    kernel = Gaussian2DKernel(sigma_x, sigma_y, theta)
+
+    plt.figure("image convolution", figsize=(12, 6))
 
     ax1 = plt.subplot(1, 3, 1)
     ax1.imshow(image, cmap="inferno")
@@ -31,7 +47,7 @@ if __name__ == "__main__":
     ax1.set_ylabel("Y [pixels]")
 
     ax2 = plt.subplot(1, 3, 2)
-    ax2.imshow(kernel, interpolation="none")
+    ax2.imshow(kernel, cmap="viridis")
     ax2.set_title("Kernel")
     ax2.set_xlabel("X [pixels]")
     ax2.set_ylabel("Y [pixels]")

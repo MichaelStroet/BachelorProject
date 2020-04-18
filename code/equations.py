@@ -7,9 +7,6 @@ import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-figures_directory = root_directory + "\\data\\codeFigures\\"
-
 def planckFunction(v, R):
     """
     Returns the intensity of thermal radiation a black body emits
@@ -80,10 +77,13 @@ def thermalIntensity(v, R, i):
 
     return planckFunction(v, diskTemperature(R)) * (1 - np.exp(-1 * dustOpticalDepth(R, i)))
 
-def pyName():
-    return __file__.split("\\")[-1].replace(".py", "")
-
 if __name__ == "__main__":
+
+    def pyName():
+        return __file__.split("\\")[-1].replace(".py", "")
+
+    root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    figures_directory = root_directory + "\\data\\codeFigures\\"
 
     # Test planckFunction
 

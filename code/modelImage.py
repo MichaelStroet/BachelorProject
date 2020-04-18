@@ -63,13 +63,17 @@ def loadImageTXT(filename):
     Loads an image saved as a txt file.
     """
 
+    # Open the requested file and extract the header data and the image
     with open(data_directory + filename) as file:
         header_data = file.readline().replace(" ", "").strip("#\n").split(",")
         image = np.loadtxt(data_directory + filename)
 
-    return image, int(header_data[0]), float(header_data[1])
+    return image, (int(header_data[0]), float(header_data[1]))
 
 if __name__ == "__main__":
+
+    def pyName():
+        return __file__.split("\\")[-1].replace(".py", "")
 
     # Parameters
     frequency = 365.5e9 # Hz
@@ -79,7 +83,6 @@ if __name__ == "__main__":
     pixelDimension = 500
 
     image = getImageMatrix(frequency, inclination, R_inner, R_outer, pixelDimension)
-    saveImagePNG(image, "image.png")
-    saveImageTXT(image, pixelDimension, R_outer, "image.txt")
+    saveImagePNG(image, f"codeFigures\\{pyName()}.png")
 
     plt.show()

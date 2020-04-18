@@ -1,5 +1,7 @@
 # Michael Stroet  11293284
 
+# Extracts a radial profile from a 2D image
+
 import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,23 +9,24 @@ import matplotlib.pyplot as plt
 from scipy.ndimage import map_coordinates
 from astropy.convolution import convolve, Gaussian2DKernel
 
-from modelImage import *
+from modelImage import loadImageTXT
 
-root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-data_directory = root_directory + "\\data\\"
-figures_directory = data_directory + "codeFigures\\"
-
-def pyName():
-    return __file__.split("\\")[-1].replace(".py", "")
+def getRadialProfile(image, pixelDimension, pixelSize, angle):
+    pass
 
 if __name__ == "__main__":
 
-    print("loading image:")
-    image, pixelDimension, pixelSize = loadImageTXT("image.txt")
+
+
+    def pyName():
+        return __file__.split("\\")[-1].replace(".py", "")
+        
+    root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    figures_directory = root_directory + "\\data\\codeFigures\\"
+
+    image, (pixelDimension, pixelSize) = loadImageTXT("image.txt")
     print(pixelDimension, pixelSize)
     print(image)
-
-    print("image loaded\n")
 
     kernel = Gaussian2DKernel(x_stddev = 10, y_stddev = 8, theta = np.pi/3)
     convolved_image = convolve(image, kernel)
@@ -69,5 +72,7 @@ if __name__ == "__main__":
 
     ax4 = plt.subplot(2,2,4)
     ax4.plot(convolved_profile)
+
+    plt.savefig(figures_directory + pyName() + ".png")
 
     plt.show()
