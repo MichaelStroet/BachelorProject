@@ -21,7 +21,7 @@ if __name__ == "__main__":
     pixelDimension = 500
 
     image = getImageMatrix(frequency, inclination, R_inner, R_outer, pixelDimension)
-    saveImagePNG(image, f"image.png")
+    saveImagePNG(image, pixelDimension, R_outer, f"image.png")
     saveImageTXT(image, pixelDimension, R_outer, "image.txt")
 
     plt.show()

@@ -3,7 +3,6 @@
 # This script contains the equations used in the model
 # Run the script itself to generate a plot for each equation
 
-import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -78,6 +77,8 @@ def thermalIntensity(v, R, i):
     return planckFunction(v, diskTemperature(R)) * (1 - np.exp(-1 * dustOpticalDepth(R, i)))
 
 if __name__ == "__main__":
+
+    import os, sys
 
     def pyName():
         return __file__.split("\\")[-1].replace(".py", "")

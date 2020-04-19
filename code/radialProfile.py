@@ -2,7 +2,6 @@
 
 # Extracts a radial profile from a 2D image
 
-import os, sys
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,6 +9,7 @@ from scipy.ndimage import map_coordinates
 from astropy.convolution import convolve, Gaussian2DKernel
 
 from modelImage import loadImageTXT
+from convolution import convolveImageGaussian2D
 
 def getLineCoordinates(pixelDimension, angle):
     """
@@ -24,7 +24,7 @@ def getRadialProfile(image, pixelDimension, pixelSize, angle):
     """
     """
 
-    center, edge = getLineCoordinates(pixelDimension, angle)
+    center, edge = getLineCoordinates(pixelDimension, angle + (np.pi / 2))
     N_points = pixelDimension
 
     # Generate N coordinates between the center and edge points
@@ -62,44 +62,47 @@ def plotRadialProfileWithImage(image, pixelDimension, pixelSize, angle):
 
 if __name__ == "__main__":
 
+    import os, sys
+
     def pyName():
         return __file__.split("\\")[-1].replace(".py", "")
 
     root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     figures_directory = root_directory + "\\data\\codeFigures\\"
 
-    profile_angle = (7/4) * np.pi
-    kernel_angle = (1/3) * np.pi
+    sigma_x = 10
+    sigma_y = 6
+
+    profile_angle = (1/4) * np.pi
+    kernel_angle = (2/3) * np.pi
 
     image, (pixelDimension, pixelSize) = loadImageTXT("image.txt")
-    R_outer = pixelDimension*pixelSize
+    convolved_image = convolveImageGaussian2D(image, sigma_x, sigma_y, kernel_angle)
 
     image_radii, image_profile = getRadialProfile(image, pixelDimension, pixelSize, profile_angle)
-
-    kernel = Gaussian2DKernel(x_stddev = 10, y_stddev = 8, theta = kernel_angle)
-    convolved_image = convolve(image, kernel)
     convolved_radii, convolved_profile = getRadialProfile(convolved_image, pixelDimension, pixelSize, profile_angle)
 
-    center, edge = getLineCoordinates(pixelDimension, profile_angle)
+    R_outer = (pixelDimension * pixelSize) / 2
+    line = [[0, R_outer * np.cos(profile_angle)], [0, R_outer * np.sin(profile_angle)]]
 
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, gridspec_kw={'width_ratios': [3, 7]}, figsize = (15, 12))
 
-    ax1.imshow(image, cmap="inferno") #, extent = [-R_outer, R_outer, -R_outer, R_outer])
-    ax1.plot([center, edge[0]], [center, edge[1]], "go-")
+    ax1.imshow(image, cmap="inferno", extent = [-R_outer, R_outer, -R_outer, R_outer])
+    ax1.plot(line[0], line[1], "go-")
     ax1.set_title("Original")
-    ax1.set_xlabel("X [pixels]")
-    ax1.set_ylabel("Y [pixels]")
+    ax1.set_xlabel("X [AU]")
+    ax1.set_ylabel("Y [AU]")
 
     ax2.plot(image_radii, image_profile)
     ax2.set_title("Intensity radial profile")
     ax2.set_xlabel("Radius [AU]")
     ax2.set_ylabel("Intensity")
 
-    ax3.imshow(convolved_image, cmap="inferno")
-    ax3.plot([center, edge[0]], [center, edge[1]], "go-")
+    ax3.imshow(convolved_image, cmap="inferno", extent = [-R_outer, R_outer, -R_outer, R_outer])
+    ax3.plot(line[0], line[1], "go-")
     ax3.set_title("Convolved")
-    ax3.set_xlabel("X [pixels]")
-    ax3.set_ylabel("Y [pixels]")
+    ax3.set_xlabel("X [AU]")
+    ax3.set_ylabel("Y [AU]")
 
     ax4.plot(convolved_radii, convolved_profile)
     ax4.set_title("Intensity radial profile")
@@ -107,8 +110,5 @@ if __name__ == "__main__":
     ax4.set_ylabel("Intensity")
 
     plt.savefig(figures_directory + pyName() + ".png")
-
-    # plotRadialProfileWithImage(image, pixelDimension, pixelSize, profile_angle)
-    # plotRadialProfileWithImage(convolved_image, pixelDimension, pixelSize, profile_angle)
 
     plt.show()

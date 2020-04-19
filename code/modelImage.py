@@ -26,25 +26,31 @@ def getImageMatrix(v, inc, R_in, R_out, pixelDimension):
 
     return matrix
 
-def plotImage(image):
+def plotImage(image, pixelDimension, pixelSize):
     """
     Plot a 2D image of the thermal continuum of the disk.
     """
 
-    plt.imshow(image, cmap="inferno")
+    R_outer = (pixelDimension * pixelSize) / 2
+
+    plt.imshow(image, cmap="inferno", extent = [-R_outer, R_outer, -R_outer, R_outer])
 
     plt.title("Thermal Continuum disk")
-    plt.xlabel("X [pixels]")
-    plt.ylabel("Y [pixels]")
+    plt.xlabel("X [AU]")
+    plt.ylabel("Y [AU]")
 
     cbar = plt.colorbar()
     cbar.set_label("Intensity")
 
-def saveImagePNG(image, filename):
+def saveImagePNG(image, pixelDimension, R_outer, filename):
     """
     Saves the image as a png file.
     """
-    plotImage(image)
+
+    # Get the size per pixel in AU
+    pixelSize = (2*R_outer) / pixelDimension
+
+    plotImage(image, pixelDimension, pixelSize)
     plt.savefig(data_directory + filename)
 
 def saveImageTXT(image, pixelDimension, R_outer, filename):
@@ -83,6 +89,6 @@ if __name__ == "__main__":
     pixelDimension = 500
 
     image = getImageMatrix(frequency, inclination, R_inner, R_outer, pixelDimension)
-    saveImagePNG(image, f"codeFigures\\{pyName()}.png")
+    saveImagePNG(image, pixelDimension, R_outer, f"codeFigures\\{pyName()}.png")
 
     plt.show()
