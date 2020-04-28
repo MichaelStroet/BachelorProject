@@ -94,7 +94,7 @@ if __name__ == "__main__":
     ax1.set_ylabel("Y [AU]")
 
     ax2.plot(image_radii, image_profile)
-    ax2.set_title("Intensity radial profile")
+    ax2.set_title("Intensity radial profile (line)")
     ax2.set_xlabel("Radius [AU]")
     ax2.set_ylabel("Intensity")
 
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     ax3.set_ylabel("Y [AU]")
 
     ax4.plot(convolved_radii, convolved_profile)
-    ax4.set_title("Intensity radial profile")
+    ax4.set_title("Intensity radial profile (line)")
     ax4.set_xlabel("Radius [AU]")
     ax4.set_ylabel("Intensity")
 
