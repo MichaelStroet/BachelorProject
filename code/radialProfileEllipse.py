@@ -86,7 +86,7 @@ def plotEllipseProfile(image, eccentricity, rotation, pixelSize = 1):
     units = getUnits(pixelSize)
 
     R_outer = min(image.shape[0] / 2, image.shape[1] / 2)
-    R_outer = 30
+    # R_outer = 30
 
     radial_profile = getEllipseProfile(image, R_outer, eccentricity, rotation)
     major_axes = np.linspace(0, R_outer, N_RADII)
