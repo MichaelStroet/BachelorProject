@@ -58,7 +58,7 @@ def plotRadialProfileWithImage(image, pixelDimension, pixelSize, angle):
     ax2.plot(image_profile)
     ax2.set_title("Intensity radial profile")
     ax2.set_xlabel("R [pixels]")
-    ax2.set_ylabel("Intensity")
+    ax2.set_ylabel("Intensity [Jy/beam]")
 
 if __name__ == "__main__":
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     ax2.plot(image_radii, image_profile)
     ax2.set_title("Intensity radial profile (line)")
     ax2.set_xlabel("Radius [AU]")
-    ax2.set_ylabel("Intensity")
+    ax2.set_ylabel("Intensity [Jy/beam]")
 
     ax3.imshow(convolved_image, cmap="inferno", extent = [-R_outer, R_outer, -R_outer, R_outer])
     ax3.plot(line[0], line[1], "go-")
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     ax4.plot(convolved_radii, convolved_profile)
     ax4.set_title("Intensity radial profile (line)")
     ax4.set_xlabel("Radius [AU]")
-    ax4.set_ylabel("Intensity")
+    ax4.set_ylabel("Intensity [Jy/beam]")
 
     plt.savefig(figures_directory + pyName() + ".png")
 

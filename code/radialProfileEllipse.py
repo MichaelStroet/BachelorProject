@@ -11,8 +11,14 @@ from astropy.convolution import convolve, Gaussian2DKernel
 from modelImage import loadImageTXT, plotImage
 from convolution import convolveImageGaussian2D
 
-N_RADII = 1000
+N_RADII = 100
 N_ANGLES = 1000
+
+def getUnits(pixelSize):
+    if pixelSize == 1:
+        return "pixels"
+    else:
+        return "also pixels"
 
 def getEllipseCoordinates(center, major, ecc, theta):
     """
@@ -55,10 +61,12 @@ def getEllipseProfile(image, R_outer, eccentricity, rotation):
 
     return radial_profile
 
-def plotEllipseImage(image, semi_major, eccentricity, rotation):
+def plotEllipseImage(image, semi_major, eccentricity, rotation, pixelSize = 1):
     """
     Plots an ellips in the image
     """
+
+    units = getUnits(pixelSize)
 
     center = [(image.shape[0] - 1) / 2., (image.shape[1] - 1) / 2.]
     x_coords, y_coords = getEllipseCoordinates(center, semi_major, eccentricity, rotation)
@@ -70,14 +78,15 @@ def plotEllipseImage(image, semi_major, eccentricity, rotation):
 
     plt.plot(x_coords, y_coords)
 
-    plt.xlabel("X [pixels]")
-    plt.ylabel("Y [pixels]")
+    plt.xlabel(f"X [{units}]")
+    plt.ylabel(f"Y [{units}]")
 
+def plotEllipseProfile(image, eccentricity, rotation, pixelSize = 1):
 
-def plotEllipseProfile(image, pixelSize, eccentricity, rotation):
+    units = getUnits(pixelSize)
 
-    R_outer = image.shape[0] / 2
-    print(R_outer)
+    R_outer = min(image.shape[0] / 2, image.shape[1] / 2)
+    R_outer = 30
 
     radial_profile = getEllipseProfile(image, R_outer, eccentricity, rotation)
     major_axes = np.linspace(0, R_outer, N_RADII)
@@ -86,13 +95,13 @@ def plotEllipseProfile(image, pixelSize, eccentricity, rotation):
 
     ax1.imshow(image, cmap="inferno")
     ax1.set_title("Image")
-    ax1.set_xlabel("X [pixels]")
-    ax1.set_ylabel("Y [pixels]")
+    ax1.set_xlabel(f"X [{units}]")
+    ax1.set_ylabel(f"Y [{units}]")
 
     ax2.plot(major_axes, radial_profile)
     ax2.set_title("Intensity radial profile (ellipses)")
-    ax2.set_xlabel("Semi-major axis [pixels]")
-    ax2.set_ylabel("Intensity")
+    ax2.set_xlabel(f"Semi-major axis [{units}]")
+    ax2.set_ylabel("Intensity [Jy/beam]")
 
 
 if __name__ == "__main__":
@@ -111,8 +120,8 @@ if __name__ == "__main__":
     eccentricity = 0.9
     rotation = (1/3) * np.pi
 
-    plotEllipseImage(image, semi_major, eccentricity, rotation)
+    plotEllipseImage(image, semi_major, eccentricity, rotation, pixelSize)
 
-    plotEllipseProfile(image, pixelSize, eccentricity, rotation)
+    plotEllipseProfile(image, eccentricity, rotation, pixelSize)
 
     plt.show()

@@ -40,7 +40,7 @@ def plotImage(image, pixelDimension, pixelSize):
     plt.ylabel("Y [AU]")
 
     cbar = plt.colorbar()
-    cbar.set_label("Intensity")
+    cbar.set_label("Intensity [Jy/beam]")
 
 def saveImagePNG(image, pixelDimension, R_outer, filename):
     """

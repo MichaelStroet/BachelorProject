@@ -78,7 +78,7 @@ def plotCircleProfile(image, pixelSize):
     ax2.plot(radii, radial_profile)
     ax2.set_title("Intensity radial profile (circles)")
     ax2.set_xlabel("R [pixels]")
-    ax2.set_ylabel("Intensity")
+    ax2.set_ylabel("Intensity [Jy/beam]")
 
 
 if __name__ == "__main__":

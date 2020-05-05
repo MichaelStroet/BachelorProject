@@ -5,81 +5,36 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from astropy.io import fits
-from fitsImage import *
-from matplotlib.colors import LogNorm
 
 root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 data_directory = os.path.join(root_directory, "data")
 ALMA_directory = os.path.join(data_directory, "ALMA-HD100546")
 
 from modelImage import *
-from convolution import *
+from fitsFiles import *
+
+from radialProfileEllipse import *
 
 if __name__ == "__main__":
 
-    # Parameters
-    frequency = 365.5e9 # Hz
-    inclination = 0.0*np.pi # [0, np.pi/2]
-    R_inner = 1 # AU
-    R_outer = 100 # AU
-    pixelDimension = 500
+    HD100546_i = 42.46 * (np.pi / 180) #radian
+    HD100546_PA = 139.1 * (np.pi / 180) #radian
 
-    # image = getImageMatrix(frequency, inclination, R_inner, R_outer, pixelDimension)
-    # saveImagePNG(image, pixelDimension, R_outer, f"image.png")
-    # saveImageTXT(image, pixelDimension, R_outer, "image.txt")
-    #
-    # plt.show()
+    ALMA_filenames = os.listdir(ALMA_directory)
+    relevant_headers = ["BMAJ", "BMIN", "BPA", "CDELT1"]
+    descriptions = ["beamMajor", "beamMinor", "beamPA", "pixelScale"]
 
-    ALMA_fits = os.listdir(ALMA_directory)
+    ALMA_data = getFitsData(ALMA_filenames, ALMA_directory, relevant_headers, descriptions)
+    printFitsData(ALMA_filenames, ALMA_data)
 
-    with fits.open(os.path.join(ALMA_directory, ALMA_fits[1])) as fits_file:
-        fits_file.info()
+    data = ALMA_data[0]
+    image = data[0]
 
-        image = fits_file[0].data[0][0]
-        print()
-        print(image)
-        print(image.shape)
-        print()
+    eccentricity = 0.8
+    rotation = (-1/3) * np.pi
 
-    sigma_x = 3
-    sigma_y = 2
-    theta = -(1/3) * np.pi
-
-    # image, (pixelDimension, pixelSize) = loadImageTXT("image.txt")
-
-    # print(f"Convolving image with sigx = {sigma_x}, sigy = {sigma_y}, theta = {theta}")
-    # convolved_image = convolveImageGaussian2D(image, sigma_x, sigma_y, theta)
-    # print("done\n")
-
-    plotFitsImage(image)
-
-    zerod_image = np.copy(image)
-    zerod_image[np.isnan(zerod_image)] = 0
-
-    profileRadius = 500
-
-    # from astropy.convolution import Gaussian2DKernel
-    # kernel = Gaussian2DKernel(sigma_x, sigma_y, -theta)
-    #
-    # plt.figure("2")
-    # ax1 = plt.subplot(1, 3, 1)
-    # ax1.imshow(image, cmap="inferno")
-    # ax1.set_title("Original")
-    # ax1.set_xlabel("X [pixels]")
-    # ax1.set_ylabel("Y [pixels]")
-    #
-    # ax2 = plt.subplot(1, 3, 2)
-    # ax2.imshow(kernel, cmap="viridis")
-    # ax2.set_title(f"Kernel")
-    # ax2.set_xlabel("X [pixels]")
-    # ax2.set_ylabel("Y [pixels]")
-    #
-    # ax3 = plt.subplot(1, 3, 3)
-    # ax3.imshow(convolved_image, cmap="inferno")
-    # ax3.set_title("Convolved")
-    # ax3.set_xlabel("X [pixels]")
-    # ax3.set_ylabel("Y [pixels]")
-
-    plotFitsRadialProfileWithImage(zerod_image, zerod_image.shape[0], profileRadius, theta)
+    semi_major = 25
+    plotEllipseImage(image, semi_major, eccentricity, rotation)
+    plotEllipseProfile(image, eccentricity, rotation)
 
     plt.show()
