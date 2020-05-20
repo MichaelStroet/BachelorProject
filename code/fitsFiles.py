@@ -5,25 +5,27 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from astropy.io import fits
+from astropy.wcs import WCS
 
 root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 data_directory = os.path.join(root_directory, "data")
 
-def plotFitsImage(image, filename):
+def plotFitsImage(image, wcs, filename):
     """
     Plot a 2D image of a nd numpy array
     """
 
-    plt.figure()
+    fig = plt.figure()
+    fig.add_subplot(111, projection=wcs)
 
-    plt.imshow(image, cmap="inferno")
+    plt.imshow(image, origin="lower", cmap="magma")
 
     cbar = plt.colorbar()
     cbar.set_label("Intensity")
 
     plt.title(f"{filename}")
-    plt.xlabel("X [pixels]")
-    plt.ylabel("Y [pixels]")
+    plt.xlabel("RA")
+    plt.ylabel("Dec")
 
 def getFitsData(filenames, directory_path, headers, descriptions):
 
@@ -42,13 +44,17 @@ def getFitsData(filenames, directory_path, headers, descriptions):
             for header_name, description in zip(headers, descriptions):
                 header_data[description] = file[0].header[header_name]
 
+            # Get the world coordinate system data from the header
+            wcs = WCS(file[0].header, naxis = 2)
+
             # Add the data to the list
-            data.append([image_data, header_data])
+            data.append([image_data, header_data, wcs])
 
     return data
 
 def printFitsData(filenames, data):
 
+    print("\n----------------------------------------------------------------------------")
     print("Data extracted from FITS files\n")
 
     for filename, data in zip(filenames, data):
@@ -57,4 +63,6 @@ def printFitsData(filenames, data):
         for header, value in data[1].items():
             print(f"{header}: {value}")
 
-        print()
+        print(f"\n{data[2]}\n")
+
+    print("----------------------------------------------------------------------------")

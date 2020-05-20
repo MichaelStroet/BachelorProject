@@ -20,28 +20,8 @@ def convolveImageGaussian2D(image, major, minor, theta):
     sigma_x = major / FWHM_factor
     sigma_y = minor / FWHM_factor
 
-    kernel = Gaussian2DKernel(sigma_x, sigma_y, -theta)
+    kernel = Gaussian2DKernel(sigma_x, sigma_y, theta)
     convolved_image = convolve(image, kernel)
-
-    # plt.figure("image convolution", figsize=(15, 6))
-    #
-    # ax1 = plt.subplot(1, 3, 1)
-    # ax1.imshow(image, cmap="inferno")
-    # ax1.set_title("Original")
-    # ax1.set_xlabel("X [pixels]")
-    # ax1.set_ylabel("Y [pixels]")
-    #
-    # ax2 = plt.subplot(1, 3, 2)
-    # ax2.imshow(kernel, cmap="viridis")
-    # ax2.set_title(f"Kernel")
-    # ax2.set_xlabel("X [pixels]")
-    # ax2.set_ylabel("Y [pixels]")
-    #
-    # ax3 = plt.subplot(1, 3, 3)
-    # ax3.imshow(convolved_image, cmap="inferno")
-    # ax3.set_title("Convolved")
-    # ax3.set_xlabel("X [pixels]")
-    # ax3.set_ylabel("Y [pixels]")
 
     return convolved_image
 
@@ -68,22 +48,22 @@ if __name__ == "__main__":
     plt.figure("image convolution", figsize=(15, 6))
 
     ax1 = plt.subplot(1, 3, 1)
-    ax1.imshow(image, cmap="inferno", extent = [-R_outer, R_outer, -R_outer, R_outer])
+    ax1.imshow(image, origin="lower", cmap="inferno")
     ax1.set_title("Original")
-    ax1.set_xlabel("X [AU]")
-    ax1.set_ylabel("Y [AU]")
+    ax1.set_xlabel("X [pixels]")
+    ax1.set_ylabel("Y [pixels]")
 
     ax2 = plt.subplot(1, 3, 2)
-    ax2.imshow(kernel, cmap="viridis", extent = [-R_kernel, R_kernel, -R_kernel, R_kernel])
+    ax2.imshow(kernel, origin="lower", cmap="viridis")
     ax2.set_title(f"Kernel")
-    ax2.set_xlabel("X [AU]")
-    ax2.set_ylabel("Y [AU]")
+    ax2.set_xlabel("X [pixels]")
+    ax2.set_ylabel("Y [pixels]")
 
     ax3 = plt.subplot(1, 3, 3)
-    ax3.imshow(convolved_image, cmap="inferno", extent = [-R_outer, R_outer, -R_outer, R_outer])
+    ax3.imshow(convolved_image, origin="lower", cmap="inferno")
     ax3.set_title("Convolved")
-    ax3.set_xlabel("X [AU]")
-    ax3.set_ylabel("Y [AU]")
+    ax3.set_xlabel("X [pixels]")
+    ax3.set_ylabel("Y [pixels]")
 
     plt.savefig(figures_directory + pyName() + ".png")
 
