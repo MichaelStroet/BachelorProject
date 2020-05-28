@@ -10,22 +10,48 @@ from astropy.wcs import WCS
 root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 data_directory = os.path.join(root_directory, "data")
 
-def plotFitsImage(image, wcs, filename):
+def plotFitsImage(data, filename, coordinates = False):
     """
     Plot a 2D image of a nd numpy array
     """
+    image, header, wcs = data
 
     fig = plt.figure()
-    fig.add_subplot(111, projection=wcs)
 
-    plt.imshow(image, origin="lower", cmap="magma")
+    if coordinates:
+        fig.add_subplot(111, projection = wcs)
 
-    cbar = plt.colorbar()
-    cbar.set_label("Intensity")
+        plt.imshow(image, origin="lower", cmap="inferno")
 
-    plt.title(f"{filename}")
-    plt.xlabel("RA")
-    plt.ylabel("Dec")
+        cbar = plt.colorbar()
+        cbar.set_label("Intensity [Jy/beam]")
+
+        plt.title(f"{filename}")
+        plt.xlabel("RA")
+        plt.ylabel("Dec")
+
+    else:
+        centerPixel = (header["xCenterPixel"], header["yCenterPixel"])
+        pixelDimension = image.shape
+
+        degreesToArcseconds = 3600
+        pixelScale = header["degreesPixelScale"] * degreesToArcseconds
+
+        extent = [(-centerPixel[0]) * pixelScale, (pixelDimension[0] - centerPixel[0]) * pixelScale,
+            (-centerPixel[1]) * pixelScale, (pixelDimension[1] - centerPixel[1]) * pixelScale]
+
+        print(f"centerPixel: {centerPixel}")
+        print(f"pixelDimension: {pixelDimension}")
+        print(f"extent: {extent}")
+
+        plt.imshow(image, origin="lower", cmap="magma", extent = extent)
+
+        cbar = plt.colorbar()
+        cbar.set_label("Intensity [Jy/beam]")
+
+        plt.title(f"{filename}")
+        plt.xlabel("Arcseconds")
+        plt.ylabel("Arcseconds")
 
 def getFitsData(filenames, directory_path, headers, descriptions):
 

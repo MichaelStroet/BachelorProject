@@ -19,31 +19,31 @@ if __name__ == "__main__":
     HD100546_PA = 139.1 * degreesToRadian #radian
 
     ALMA_filenames = os.listdir(ALMA_directory)
-    relevant_headers = ["BMAJ", "BMIN", "BPA", "CDELT2"]
-    descriptions = ["beamSemiMajor", "beamSemiMinor", "beamPA", "degreesPixelScale"]
+    relevant_headers = ["BMAJ", "BMIN", "BPA", "CRPIX1", "CRPIX2", "CDELT2"]
+    descriptions = ["beamSemiMajor", "beamSemiMinor", "beamPA", "xCenterPixel", "yCenterPixel", "degreesPixelScale"]
 
     ALMA_data = getFitsData(ALMA_filenames, ALMA_directory, relevant_headers, descriptions)
     printFitsData(ALMA_filenames, ALMA_data)
 
-    file_index = 0
+    file_index = 1
 
     data = ALMA_data[file_index]
     image = data[0]
     header = data[1]
     wcs = data[2]
 
-    pixelScale = abs(header["degreesPixelScale"]) # degrees per pixel
-    major_axis = (header["beamSemiMajor"] * 2) / pixelScale # pixels
-    minor_axis = (header["beamSemiMinor"] * 2) / pixelScale # pixels
+    major_axis = (header["beamSemiMajor"] * 2) / header["degreesPixelScale"] # pixels
+    minor_axis = (header["beamSemiMinor"] * 2) / header["degreesPixelScale"] # pixels
     convolve_angle = header['beamPA'] * degreesToRadian # radian
 
     convolved_image = convolveImageGaussian2D(image, major_axis, minor_axis, convolve_angle)
+    convolved_data = [convolved_image, header, wcs]
 
-    plotFitsImage(image, wcs, f"Original image ({ALMA_filenames[file_index]})")
-    plotFitsImage(convolved_image, wcs, f"Convolved image ({ALMA_filenames[file_index]})\nmajor:{major_axis:.2f} px, minor:{minor_axis:.2f} px, angle:{(convolve_angle / np.pi):.2f} πrad")
+    plotFitsImage(data, f"Original image ({ALMA_filenames[file_index]})")
+    plotFitsImage(convolved_data, f"Convolved image ({ALMA_filenames[file_index]})\nmajor:{major_axis:.2f} px, minor:{minor_axis:.2f} px, angle:{(convolve_angle / np.pi):.2f} πrad")
+
+    # eccentricity = np.sin(HD100546_i)
     #
-    eccentricity = np.sin(HD100546_i)
-
-    plotEllipseProfile(convolved_image, eccentricity, HD100546_PA - (np.pi / 2))
+    # plotEllipseProfile(convolved_image, eccentricity, HD100546_PA - (np.pi / 2))
 
     plt.show()
