@@ -1,48 +1,60 @@
 # Michael Stroet  11293284
 
 import numpy as np
-import matplotlib.pyplot as plt
-
 from astropy.convolution import convolve, Gaussian2DKernel
 
-def convolveImageGaussian2D(image, major, minor, theta, plot = False):
+def convolveImageGaussian2D(data, theta):
     """
     Convolve the image with a 2D Gaussian kernel.
     image is a nd numpy array,
     major and minor are the lengths of the axes of the FWHM ellipse in pixels,
     theta is the rotation angle in radians.
     """
+    image, header, wcs = data
+
+    major_axis = (header["beamSemiMajor"] * 2) / header["degreesPixelScale"] # pixels
+    minor_axis = (header["beamSemiMinor"] * 2) / header["degreesPixelScale"] # pixels
 
     FWHM_factor = 2 * np.sqrt(2 * np.log(2))
-    sigma_x = major / FWHM_factor
-    sigma_y = minor / FWHM_factor
+    sigma_x = major_axis / FWHM_factor
+    sigma_y = minor_axis / FWHM_factor
 
-    kernel = Gaussian2DKernel(sigma_x, sigma_y, theta)
-    convolved_image = convolve(image, kernel)
+    return convolve(image, Gaussian2DKernel(sigma_x, sigma_y, theta))
 
-    if plot:
-        plotConvolution(image, kernel, convolved_image)
+def convolveDataImage(data):
+    image, header, wcs = data
 
-    return convolved_image
+    major_axis = (header["beamSemiMajor"] * 2) / header["degreesPixelScale"] # pixels
+    minor_axis = (header["beamSemiMinor"] * 2) / header["degreesPixelScale"] # pixels
 
-def plotConvolution(image, kernel, convolved):
+    FWHM_factor = 2 * np.sqrt(2 * np.log(2))
+    sigma_x = major_axis / FWHM_factor
+    sigma_y = minor_axis / FWHM_factor
 
-    plt.figure("image convolution", figsize=(15, 6))
+    angle = header['beamPA'] * (np.pi / 180) # radian (PA already defined as 90 degrees)
+    kernel = Gaussian2DKernel(sigma_x, sigma_y, angle)
 
-    ax1 = plt.subplot(1, 3, 1)
-    ax1.imshow(image, origin="lower", cmap="inferno")
-    ax1.set_title("Original")
-    ax1.set_xlabel("X [pixels]")
-    ax1.set_ylabel("Y [pixels]")
+    return convolve(image, kernel)
 
-    ax2 = plt.subplot(1, 3, 2)
-    ax2.imshow(kernel, origin="lower", cmap="viridis")
-    ax2.set_title(f"Kernel")
-    ax2.set_xlabel("X [pixels]")
-    ax2.set_ylabel("Y [pixels]")
+def generateModelKernels(data):
+    image, header, wcs = data
 
-    ax3 = plt.subplot(1, 3, 3)
-    ax3.imshow(convolved, origin="lower", cmap="inferno")
-    ax3.set_title("Convolved")
-    ax3.set_xlabel("X [pixels]")
-    ax3.set_ylabel("Y [pixels]")
+    major_axis = (header["beamSemiMajor"] * 2) / header["degreesPixelScale"] # pixels
+    minor_axis = (header["beamSemiMinor"] * 2) / header["degreesPixelScale"] # pixels
+
+    FWHM_factor = 2 * np.sqrt(2 * np.log(2))
+    sigma_x = major_axis / FWHM_factor
+    sigma_y = minor_axis / FWHM_factor
+
+    perp_angle = (header['beamPA'] - 90) * (np.pi / 180) # radian
+    perp_kernel = Gaussian2DKernel(sigma_x, sigma_y, perp_angle)
+
+    beam_angle = perp_angle - (0.5 * np.pi)
+    beam_kernel = Gaussian2DKernel(sigma_x, sigma_y, beam_angle)
+
+    area_kernel = convolve(beam_kernel, perp_kernel)
+    peak_kernel = convolve(beam_kernel, perp_kernel)
+    area_kernel.normalize(mode = 'integral')
+    peak_kernel.normalize(mode = 'peak')
+
+    return area_kernel, peak_kernel

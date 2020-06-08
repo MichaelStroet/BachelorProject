@@ -5,24 +5,26 @@
 
 import numpy as np
 
-def planckFunction(v, T):
+def planckFunction(v, T, sr_per_pix):
     """
     Returns the intensity of thermal radiation a black body emits
-    at frequency nu (v) and temperature T(R).
-    v is given in Hz, R in AU.
+    at frequency v and temperature T.
     """
 
     # Constants
-    h = 6.626e-34 # m^2 kg s^-1 (Planck"s constant)
+    h = 6.626e-34 # J s (Planck"s constant)
     c = 2.998e8 # m s^-1 (Speed of light)
     kB = 1.38e-23 # J K^-1 (Boltzmann"s constant)
 
-    return 2 * h * v**3 / c**2 * pow(np.exp(h * v / kB / T) - 1, -1)
+    # Calculate intensity in J/m^2/sr
+    planck = 2 * h * v**3 / c**2 * pow(np.exp(h * v / kB / T) - 1, -1)
+
+    # Convert J/m^2/sr to Jy/pixel
+    return 1e26 * sr_per_pix * planck
 
 def dustSurfaceDensity(R, Sig0, R_br, p0, p1):
     """
     Calculates the dust surface density (Sigma d) from a broken power law.
-    R is given in AU.
     """
 
     if R <= R_br:
@@ -32,16 +34,13 @@ def dustSurfaceDensity(R, Sig0, R_br, p0, p1):
 
 def dustOpticalDepth(R, Sig0, R_br, p0, p1, k, i):
     """
-    Calculates the dust optical depth (tau) for radius R at 365.5 GHz.
-    R is given in AU, i in radians [0, π/2].
+    Calculates the dust optical depth (tau) for radius R.
     """
-
     return dustSurfaceDensity(R, Sig0, R_br, p0, p1) * k * np.cos(i)
 
 def diskTemperature(R, R0, T0, q0, q1):
     """
     Calculates the temperature at radius R from a broken power law.
-    R is given in AU.
     """
 
     if R <= R0:
@@ -49,19 +48,17 @@ def diskTemperature(R, R0, T0, q0, q1):
     else:
         return T0 * pow(R / R0, -q1)
 
-def thermalIntensity(R, parameters):
+def thermalIntensity(R, sr_per_pix, fixed_pars, free_pars):
     """
-    Calculates the thermal intensity at frequency v from the dust
-    inside the disk at radius R
-    v is given in Hz, R in AU, i in radians [0, π/2]
+    Calculates the thermal intensity from the dust at radius R.
     """
-
-    v, R0, T0, q0, q1, Sig0, R_br, p0, p1, k, i = parameters
+    v, k, i = fixed_pars
+    Rin, Rout, T0, R_br, p0, p1, Sig0, q0, q1, R0 = free_pars
 
     T_disk = diskTemperature(R, R0, T0, q0, q1)
     optical_depth = dustOpticalDepth(R, Sig0, R_br, p0, p1, k, i)
 
-    return planckFunction(v, T_disk) * (1 - np.exp(-optical_depth))
+    return planckFunction(v, T_disk, sr_per_pix) * (1 - np.exp(-optical_depth))
 
 if __name__ == "__main__":
 
@@ -88,10 +85,12 @@ if __name__ == "__main__":
     i = 0.0*np.pi # [0, np.pi/2]
 
     R = 10 # AU
-    Rinner = 2 # AU
-    Router = 200 # AU
+    Rin = 2 # AU
+    Rout = 200 # AU
 
-    parameters = (v, R0, T0, q0, q1, Sig0, R_br, p0, p1, k, i)
+    sr_per_pix = 9.4e-13
+    fixed_pars = (v, k, i)
+    free_pars = [Rin, Rout, T0, R_br, p0, p1, Sig0, q0, q1, R0]
 
     # Test planckFunction
 
@@ -101,7 +100,7 @@ if __name__ == "__main__":
     intensities = []
 
     for frequency in frequencies:
-        intensities.append(planckFunction(frequency, temperature))
+        intensities.append(planckFunction(frequency, temperature, sr_per_pix))
 
     plt.figure("planckFunction", figsize = (10, 5))
 
@@ -109,13 +108,13 @@ if __name__ == "__main__":
 
     plt.title(f"planckFunction, R = {R} AU -> T = {temperature:.2f} K")
     plt.xlabel("Frequency [GHz]")
-    plt.ylabel("Intensity")
+    plt.ylabel("Intensity [Jy/pixel]")
 
     plt.savefig(figures_directory + pyName() + "-" + "planckFunction.png")
 
     # Test dustSurfaceDensity
 
-    radii = np.linspace(Rinner, Router, 1000)
+    radii = np.linspace(Rin, Rout, 1000)
     densities = []
 
     for radius in radii:
@@ -134,7 +133,7 @@ if __name__ == "__main__":
 
     # Test dustOpticalDepth
 
-    radii = np.linspace(Rinner, Router, 1000)
+    radii = np.linspace(Rin, Rout, 1000)
     optical_depths = []
 
     for radius in radii:
@@ -154,7 +153,7 @@ if __name__ == "__main__":
 
     # Test diskTemperature
 
-    radii = np.linspace(Rinner, Router, 1000)
+    radii = np.linspace(Rin, Rout, 1000)
     temperatures = []
 
     for R in radii:
@@ -174,11 +173,11 @@ if __name__ == "__main__":
 
     # Test thermalIntensity
 
-    radii = np.linspace(Rinner, Router, 1000)
+    radii = np.linspace(Rin, Rout, 1000)
     thermal_intensities = []
 
     for radius in radii:
-        thermal_intensities.append(thermalIntensity(radius, parameters))
+        thermal_intensities.append(thermalIntensity(radius, sr_per_pix, fixed_pars, free_pars))
 
     plt.figure("thermalIntensity", figsize = (10, 5))
 
@@ -187,7 +186,7 @@ if __name__ == "__main__":
 
     plt.title(f"Thermal continuum, v = {v/1e9}GHz, i = {i/np.pi}π")
     plt.xlabel("Radius [AU]")
-    plt.ylabel("Intensity")
+    plt.ylabel("Intensity [Jy/pixel]")
 
     plt.savefig(figures_directory + pyName() + "-" + "thermalIntensity.png")
 

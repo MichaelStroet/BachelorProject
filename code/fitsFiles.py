@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 from astropy.io import fits
 from astropy.wcs import WCS
+from matplotlib.colors import LogNorm
 
 root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 data_directory = os.path.join(root_directory, "data")
@@ -14,19 +15,20 @@ def plotFitsImage(data, filename, coordinates = False):
     """
     Plot a 2D image of a nd numpy array
     """
-    image, header, wcs = data
+    image = np.copy(data[0])
+    header, wcs = data[1:]
+
+    # Replace all negatives with the smallest positive value in the image
+    smallest_value = np.min(image[np.where(image > 0)])
+    image[np.where(image <= 0.0)] = smallest_value
 
     fig = plt.figure()
 
     if coordinates:
         fig.add_subplot(111, projection = wcs)
 
-        plt.imshow(image, origin="lower", cmap="inferno")
+        plt.imshow(image, origin="lower", norm=LogNorm(), cmap="inferno")
 
-        cbar = plt.colorbar()
-        cbar.set_label("Intensity [Jy/beam]")
-
-        plt.title(f"{filename}")
         plt.xlabel("RA")
         plt.ylabel("Dec")
 
@@ -40,18 +42,19 @@ def plotFitsImage(data, filename, coordinates = False):
         extent = [(-centerPixel[0]) * pixelScale, (pixelDimension[0] - centerPixel[0]) * pixelScale,
             (-centerPixel[1]) * pixelScale, (pixelDimension[1] - centerPixel[1]) * pixelScale]
 
-        print(f"centerPixel: {centerPixel}")
-        print(f"pixelDimension: {pixelDimension}")
-        print(f"extent: {extent}")
+        # print(f"centerPixel: {centerPixel}")
+        # print(f"pixelDimension: {pixelDimension}")
+        # print(f"extent: {extent}")
 
-        plt.imshow(image, origin="lower", cmap="magma", extent = extent)
+        plt.imshow(image, origin="lower", norm=LogNorm(), cmap="inferno", extent = extent)
 
-        cbar = plt.colorbar()
-        cbar.set_label("Intensity [Jy/beam]")
-
-        plt.title(f"{filename}")
         plt.xlabel("Arcseconds")
         plt.ylabel("Arcseconds")
+
+    cbar = plt.colorbar()
+    cbar.set_label("Intensity [Jy/beam]")
+
+    plt.title(f"{filename}")
 
 def getFitsData(filenames, directory_path, headers, descriptions):
 

@@ -2,73 +2,73 @@
 
 import os, sys
 import numpy as np
-import matplotlib.pyplot as plt
 
-from matplotlib.colors import LogNorm
-from equationsparameters import thermalIntensity
+from equations import thermalIntensity
 
 root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 data_directory = root_directory + "\\data\\"
 
-def getImageMatrix(parameters, R_in, R_out, pixelDimension):
+def getImageMatrix(fixed_pars, free_pars, pixel_coords, sr_per_pix):
     """
     Generates a numpy matrix of continuum intensities for plotting the disk.
     v is given in Hz, inc in radians [0, π/2] and R_in/R_out in AU.
     """
 
-    coords = np.linspace(-R_out, R_out, pixelDimension)
-    matrix = np.zeros((len(coords), len(coords)))
+    Rin, Rout, T0, R_br, p0, p1, Sig0, q0, q1, R0 = free_pars
 
-    for i, x in enumerate(coords):
-        for j, y in enumerate(coords):
+    matrix = np.zeros((len(pixel_coords), len(pixel_coords)))
+
+    for i, x in enumerate(pixel_coords):
+        for j, y in enumerate(pixel_coords):
             radius = np.sqrt(x**2 + y**2)
-            if radius >= R_in and radius <= R_out:
-                matrix[i, j] = thermalIntensity(radius, parameters)
+            if radius >= Rin and radius <= Rout:
+                matrix[i, j] = thermalIntensity(radius, sr_per_pix, fixed_pars, free_pars)
 
     return matrix
 
-def plotImage(image, pixelDimension, pixelSize):
+def plotImage(image, Rout, plot_title = ""):
     """
     Plot a 2D image of the thermal continuum of the disk.
     """
-
-    R_outer = (pixelDimension * pixelSize) / 2
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import LogNorm
 
     # Replace all zeros with the smallest value in the image
     smallest_value = np.min(image[np.nonzero(image)])
     image[np.where(image == 0.0)] = smallest_value
-    print(image)
 
-    plt.imshow(image, cmap="inferno", norm=LogNorm(), extent = [-R_outer, R_outer, -R_outer, R_outer])
+    plt.figure()
 
-    plt.title("Thermal Continuum disk")
-    plt.xlabel("X [AU]")
-    plt.ylabel("Y [AU]")
+    plt.imshow(image, cmap="inferno", norm=LogNorm(), extent = [-Rout, Rout, -Rout, Rout])
+
+    plt.title(plot_title)
+    plt.xlabel("X [pixels]")
+    plt.ylabel("Y [pixels]")
 
     cbar = plt.colorbar()
     cbar.set_label("Intensity [Jy/beam]")
 
-def saveImagePNG(image, pixelDimension, R_outer, filename):
+def saveImagePNG(image, pixel_dimension, R_outer, filename):
     """
     Saves the image as a png file.
     """
 
     # Get the size per pixel in AU
-    pixelSize = (2*R_outer) / pixelDimension
+    pixel_scale = (2*R_outer) / pixel_dimension
 
-    plotImage(image, pixelDimension, pixelSize)
+    plotImage(image, R_outer)
     plt.savefig(data_directory + filename)
 
-def saveImageTXT(image, pixelDimension, R_outer, filename):
+def saveImageTXT(image, pixel_dimension, R_outer, filename):
     """
     Saves the image as a txt file of the numpy array.
     """
 
     # Get the size per pixel in AU
-    pixelSize = (2*R_outer) / pixelDimension
+    pixel_scale = (2*R_outer) / pixel_dimension
 
-    # Save the image as a txt file with the pixelDimension and pixelSize in the header
-    np.savetxt(data_directory + filename, image, fmt = "%.5e", header = f"{pixelDimension}, {pixelSize}")
+    # Save the image as a txt file with the pixel_dimension and pixelSize in the header
+    np.savetxt(data_directory + filename, image, fmt = "%.5e", header = f"{pixel_dimension}, {pixel_scale}")
 
 def loadImageTXT(filename):
     """
@@ -99,15 +99,15 @@ if __name__ == "__main__":
     p0 = 0.53
     p1 = 8.0
     i = 0.0*np.pi # [0, np.pi/2]
+    Rin = 1 # AU
+    Rout = 80 # AU
 
-    parameters = (v, R0, T0, q0, q1, Sig0, R_br, p0, p1, k, i)
+    fixed_pars = (v, k, Sig0, q0, q1, R0, i)
+    free_pars = [Rin, Rout, T0, R_br, p0, p1]
 
-    # Parameters
-    R_inner = 1 # AU
-    R_outer = 80 # AU
-    pixelDimension = 500
+    pixel_dimension = 500
 
-    image = getImageMatrix(parameters, R_inner, R_outer, pixelDimension)
-    saveImagePNG(image, pixelDimension, R_outer, f"codeFigures\\{pyName()}.png")
+    image = getImageMatrix(fixed_pars, free_pars, pixel_dimension)
+    saveImagePNG(image, pixel_dimension, Rout, f"codeFigures\\{pyName()}.png")
 
     plt.show()
