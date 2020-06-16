@@ -40,7 +40,7 @@ def getCircleAverage(image, R):
     values = map_coordinates(image, [x_coords, y_coords])
     average = sum(values) / len(values)
 
-    return average
+    return abs(average)
 
 def getCircleProfile(image, pixel_radii):
     """

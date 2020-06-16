@@ -47,7 +47,7 @@ def getEllipseAverage(image, semi_major, eccentricity, rotation):
     values = map_coordinates(image, coordinates)
     average = sum(values) / len(values)
 
-    return average
+    return abs(average)
 
 def getEllipseProfile(image, R_outer, eccentricity, rotation):
     """
