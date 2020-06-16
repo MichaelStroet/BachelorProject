@@ -12,7 +12,7 @@ from modelImage import loadImageTXT, plotImage
 from convolution import convolveImageGaussian2D
 
 N_RADII = 100
-N_ANGLES = 1000
+N_ANGLES = 100
 
 def getUnits(pixelSize):
     if pixelSize == 1:

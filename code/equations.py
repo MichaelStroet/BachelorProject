@@ -17,7 +17,22 @@ def planckFunction(v, T, sr_per_pix):
     kB = 1.38e-23 # J K^-1 (Boltzmann"s constant)
 
     # Calculate intensity in J/m^2/sr
-    planck = 2 * h * v**3 / c**2 * pow(np.exp(h * v / kB / T) - 1, -1)
+
+    if T <= 0:
+        # print(f"Nonsense temperature: {T}K\nReturn intensity of 1e-100\n")
+        return 1e-100
+
+    exponent = h * v / kB / T
+    if exponent > 700:
+        # print(f"Exponent too large to handle: e^{exponent:.2f}\nReturn intensity of 1e-100\n")
+        return 1e-100
+    #
+    exp = np.exp(exponent) - 1
+    if exp < 1e-300:
+        # print(f"Too close to division by zero: 1/{exp}\nReturn intensity of 1e-100\n")
+        return 1e-100
+
+    planck = 2 * h * v**3 / c**2 / exp
 
     # Convert J/m^2/sr to Jy/pixel
     return 1e26 * sr_per_pix * planck
