@@ -3,18 +3,30 @@
 import os, sys
 import numpy as np
 
-from equations import thermalIntensity
-
 root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 data_directory = root_directory + "\\data\\"
 
-def getImageMatrix(fixed_pars, free_pars, pixel_coords, sr_per_pix):
+def getImageMatrix(fixed_pars, free_pars, pixel_coords, sr_per_pix, model):
     """
     Generates a numpy matrix of continuum intensities for plotting the disk.
     v is given in Hz, inc in radians [0, π/2] and R_in/R_out in AU.
     """
+    # Import correct thermal intensity model
+    if model == "TWHya":
+        from equations import thermalIntensityTWHya as thermalIntensity
 
-    Rin, Rout, T0, R_br, p0, p1, Sig0, q0, q1, R0 = free_pars
+    elif model == "single":
+        from equations import thermalIntensitySingle as thermalIntensity
+
+    elif model == "double":
+        from equations import thermalIntensityDouble as thermalIntensity
+
+    else:
+        print(f"Error: Unknown model {model}")
+        exit(1)
+
+    Rin = free_pars[0]
+    Rout = free_pars[1]
 
     matrix = np.zeros((len(pixel_coords), len(pixel_coords)))
 

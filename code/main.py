@@ -8,7 +8,10 @@ root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 data_directory = os.path.join(root_directory, "data")
 ALMA_directory = os.path.join(data_directory, "ALMA-HD100546")
 
-from mcmcpool import mcmc
+from mcmcTWHya import mcmc as mcmcTWHya
+from mcmcSingle import mcmc as mcmcSingle
+from mcmcDouble import mcmc as mcmcDouble
+
 from fitsFiles import *
 
 # Prevent unwanted use of multiple CPU threads
@@ -37,6 +40,14 @@ if __name__ == "__main__":
     data[1]["inclination"] = HD100546_i
     data[1]["positionAngleMin90"] = HD100546_PA - (90 * degreesToRadian)
 
-    mcmc(data)
+    nwalkers = 100
+    burnin_steps = 300
+    production_steps = 600
+
+    mcmcTWHya(data, nwalkers, burnin_steps, production_steps)
+    mcmcSingle(data, nwalkers, burnin_steps, production_steps)
+    mcmcDouble(data, nwalkers, burnin_steps, production_steps)
+
+
 
     plt.show()
