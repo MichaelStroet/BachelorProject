@@ -30,7 +30,7 @@ if __name__ == "__main__":
     ALMA_data = getFitsData(ALMA_filenames, ALMA_directory, relevant_headers, descriptions)
     printFitsData(ALMA_filenames, ALMA_data)
 
-    file_index = 0
+    file_index = 1
     data = ALMA_data[file_index]
 
     # Set negative noise from the image to zero
@@ -41,13 +41,9 @@ if __name__ == "__main__":
     data[1]["positionAngleMin90"] = HD100546_PA - (90 * degreesToRadian)
 
     nwalkers = 100
-    burnin_steps = 300
-    production_steps = 600
+    burnin_steps = 50
+    production_steps = 50
 
-    mcmcTWHya(data, nwalkers, burnin_steps, production_steps)
+    # mcmcTWHya(data, nwalkers, burnin_steps, production_steps)
     mcmcSingle(data, nwalkers, burnin_steps, production_steps)
-    mcmcDouble(data, nwalkers, burnin_steps, production_steps)
-
-
-
-    plt.show()
+    # mcmcDouble(data, nwalkers, burnin_steps, production_steps)

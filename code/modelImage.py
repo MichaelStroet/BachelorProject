@@ -6,10 +6,15 @@ import numpy as np
 root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 data_directory = root_directory + "\\data\\"
 
-def getImageMatrix(fixed_pars, free_pars, pixel_coords, sr_per_pix, model):
+def cropImage(img, crop_radius):
+   y, x = img.shape
+   startx = x // 2 - crop_radius
+   starty = y // 2 - crop_radius
+   return img[starty:starty + 2*crop_radius, startx:startx + 2*crop_radius]
+
+def getImageMatrix(fixed_pars, free_pars, pixel_coords, arcsec_per_pix, sr_per_pix, model):
     """
     Generates a numpy matrix of continuum intensities for plotting the disk.
-    v is given in Hz, inc in radians [0, π/2] and R_in/R_out in AU.
     """
     # Import correct thermal intensity model
     if model == "TWHya":
@@ -32,7 +37,7 @@ def getImageMatrix(fixed_pars, free_pars, pixel_coords, sr_per_pix, model):
 
     for i, x in enumerate(pixel_coords):
         for j, y in enumerate(pixel_coords):
-            radius = np.sqrt(x**2 + y**2)
+            radius = np.sqrt(x**2 + y**2) * arcsec_per_pix
             if radius >= Rin and radius <= Rout:
                 matrix[i, j] = thermalIntensity(radius, sr_per_pix, fixed_pars, free_pars)
 
@@ -94,32 +99,32 @@ def loadImageTXT(filename):
 
     return image, (int(header_data[0]), float(header_data[1]))
 
-if __name__ == "__main__":
-
-    def pyName():
-        return __file__.split("\\")[-1].replace(".py", "")
-
-    # Parameters
-    v = 365.5e9 # Hz
-    R0 = 7 # AU
-    T0 = 27 # K
-    q0 = 2.6
-    q1 = 0.26
-    k = 0.34 # m^2 kg^-1 (at 365.5 GHz)
-    Sig0 = 0.1 # kg m^-2 (guess)
-    R_br = 47 # AU
-    p0 = 0.53
-    p1 = 8.0
-    i = 0.0*np.pi # [0, np.pi/2]
-    Rin = 1 # AU
-    Rout = 80 # AU
-
-    fixed_pars = (v, k, Sig0, q0, q1, R0, i)
-    free_pars = [Rin, Rout, T0, R_br, p0, p1]
-
-    pixel_dimension = 500
-
-    image = getImageMatrix(fixed_pars, free_pars, pixel_dimension)
-    saveImagePNG(image, pixel_dimension, Rout, f"codeFigures\\{pyName()}.png")
-
-    plt.show()
+# if __name__ == "__main__":
+#
+#     def pyName():
+#         return __file__.split("\\")[-1].replace(".py", "")
+#
+#     # Parameters
+#     v = 365.5e9 # Hz
+#     R0 = 7 # AU
+#     T0 = 27 # K
+#     q0 = 2.6
+#     q1 = 0.26
+#     k = 0.34 # m^2 kg^-1 (at 365.5 GHz)
+#     Sig0 = 0.1 # kg m^-2 (guess)
+#     R_br = 47 # AU
+#     p0 = 0.53
+#     p1 = 8.0
+#     i = 0.0*np.pi # [0, np.pi/2]
+#     Rin = 1 # AU
+#     Rout = 80 # AU
+#
+#     fixed_pars = (v, k, Sig0, q0, q1, R0, i)
+#     free_pars = [Rin, Rout, T0, R_br, p0, p1]
+#
+#     pixel_dimension = 500
+#
+#     image = getImageMatrix(fixed_pars, free_pars, pixel_dimension)
+#     saveImagePNG(image, pixel_dimension, Rout, f"codeFigures\\{pyName()}.png")
+#
+#     plt.show()

@@ -17,88 +17,91 @@ from matplotlib.colors import LogNorm
 from astropy.convolution import convolve
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from fitsFiles import *
 from modelImage import *
 from convolution import *
-from radialProfileCircle import getCircleProfile
-from radialProfileEllipse import getEllipseProfile
+from mcmcFunctions import *
+# from radialProfileCircle import getCircleProfile
+# from radialProfileEllipse import getEllipseProfile
+#
+# def getDataIntensities(data, max_radius, eccentricity, rotation):
+#
+#     convolved_image = convolveDataImage(data)
+#
+#     data_intensities = np.asarray(getEllipseProfile(convolveDataImage(data), max_radius, eccentricity, rotation))
+#     data_max = np.max(data_intensities)
+#
+#     # Return the intensities scaled in such a way that the peak is at 1
+#     return data_intensities / data_max
+#
+# def getModelIntensities(free_pars, PIXEL_COORDS, radii, SR_PER_PIX, fixed_pars, MODEL_KERNEL, model):
+#
+#     # generate the model image
+#     model_image = getImageMatrix(fixed_pars, free_pars, PIXEL_COORDS, SR_PER_PIX, model)
+#
+#     # Convolve model with the combined "round" kernel
+#     convolved_model_image = convolve(model_image, MODEL_KERNEL)
+#
+#     # Generate a radial intensity profile from the model image
+#     model_intensities = np.asarray(getCircleProfile(convolved_model_image, radii))
+#     model_max = np.max(model_intensities)
+#
+#     if model_max == np.nan or model_max < 0:
+#         print(f"model_max: {model_max}")
+#
+#     # Return the intensities scaled in such a way that the peak is at 1
+#     return model_intensities / model_max
 
-def getDataIntensities(data, max_radius, eccentricity, rotation):
-
-    convolved_image = convolveDataImage(data)
-
-    data_intensities = np.asarray(getEllipseProfile(convolveDataImage(data), max_radius, eccentricity, rotation))
-    data_max = np.max(data_intensities)
-
-    # Return the intensities scaled in such a way that the peak is at 1
-    return data_intensities / data_max
-
-def getModelIntensities(free_pars, PIXEL_COORDS, radii, SR_PER_PIX, fixed_pars, MODEL_KERNEL, model):
-
-    # generate the model image
-    model_image = getImageMatrix(fixed_pars, free_pars, PIXEL_COORDS, SR_PER_PIX, model)
-
-    # Convolve model with the combined "round" kernel
-    convolved_model_image = convolve(model_image, MODEL_KERNEL)
-
-    # Generate a radial intensity profile from the model image
-    model_intensities = np.asarray(getCircleProfile(convolved_model_image, radii))
-    model_max = np.max(model_intensities)
-
-    if model_max == np.nan or model_max < 0:
-        print(f"model_max: {model_max}")
-
-    # Return the intensities scaled in such a way that the peak is at 1
-    return model_intensities / model_max
-
-def parameter_ranges(free_pars, ARCSEC_PER_PIX):
+def parameter_ranges(free_pars, arcsec_per_pix):
     Rin, Rout, SigFrac, R1, p1, p2, q = free_pars
 
+    # print(f"Rin: {Rin}\n[{0.1 / arcsec_per_pix:.2f}, {Rout:.2f}]\n")
+    # print(f"Rout: {Rout}\n[{2*Rin:.2f}, {10 / arcsec_per_pix:.2f}]\n")
+
     ranges = []
-    ranges.append([0.1 / ARCSEC_PER_PIX, Rout]) # Rin (pixels)
-    ranges.append([2*Rin, 30 / ARCSEC_PER_PIX]) # Rout (pixels)
-    ranges.append([0, 10])                      # SigFrac = Sig2/Sig1
-    ranges.append([Rin, Rout])                      # R1 (pixels)
-    ranges.append([0, 20])                      # p1
-    ranges.append([0, 20])                      # p2
-    ranges.append([0, 20])                      # q
+    ranges.append([0.1 / arcsec_per_pix, Rout]) # Rin (pixels)
+    ranges.append([3*Rin, 10 / arcsec_per_pix]) # Rout (pixels)
+    ranges.append([0, 5])                      # SigFrac = Sig2/Sig1
+    ranges.append([Rin, Rout])                  # R1 (pixels)
+    ranges.append([0, 3])                       # p1
+    ranges.append([0, 3])                       # p2
+    ranges.append([0, 5])                       # q
 
     return ranges
 
-# log-prior function
-def logPrior(free_pars, ARCSEC_PER_PIX):
-
-    for parameter, range in zip(free_pars, parameter_ranges(free_pars, ARCSEC_PER_PIX)):
-        if not range[0] <= parameter <= range[1]:
-            return -np.inf
-
-    return 0
-
-# log-likelihood function
-def logLikelihood(free_pars, CONSTANTS):
-    PIXEL_DIMENSION, PIXEL_COORDS, FIT_RADII, ARCSEC_PER_PIX, SR_PER_PIX, FIT_DATA_INTENSITIES, fixed_pars, MODEL_KERNEL, model = CONSTANTS
-
-    I_model = getModelIntensities(free_pars, PIXEL_COORDS, FIT_RADII, SR_PER_PIX, fixed_pars, MODEL_KERNEL, model)
-    variance = np.sum((FIT_DATA_INTENSITIES - I_model)**2) / len(FIT_DATA_INTENSITIES)
-
-    log_likelihood = -0.5 * np.sum(((FIT_DATA_INTENSITIES - I_model)**2 / variance) + np.log(2 * np.pi * variance))
-
-    return log_likelihood
-
-# log-probability function
-def logProbability(free_pars, CONSTANTS):
-    PIXEL_DIMENSION, PIXEL_COORDS, FIT_RADII, ARCSEC_PER_PIX, SR_PER_PIX, FIT_DATA_INTENSITIES, fixed_pars, MODEL_KERNEL, model = CONSTANTS
-
-    log_prior = logPrior(free_pars, ARCSEC_PER_PIX)
-    if np.isfinite(log_prior):
-        log_likelihood = logLikelihood(free_pars, CONSTANTS)
-        if np.isnan(log_likelihood):
-            print(f"log_likelihood returned nan, return -infinity")
-            return -np.inf
-
-        return log_likelihood + log_prior
-    else:
-        return log_prior
+# # log-prior function
+# def logPrior(free_pars, arcsec_per_pix):
+#
+#     for parameter, range in zip(free_pars, parameter_ranges(free_pars, arcsec_per_pix)):
+#         if not range[0] <= parameter <= range[1]:
+#             return -np.inf
+#
+#     return 0
+#
+# # log-likelihood function
+# def logLikelihood(free_pars, CONSTANTS):
+#     pixel_dimension, PIXEL_COORDS, FIT_RADII, arcsec_per_pix, SR_PER_PIX, FIT_DATA_INTENSITIES, fixed_pars, MODEL_KERNEL, model = CONSTANTS
+#
+#     I_model = getModelIntensities(free_pars, PIXEL_COORDS, FIT_RADII, SR_PER_PIX, fixed_pars, MODEL_KERNEL, model)
+#     variance = np.sum((FIT_DATA_INTENSITIES - I_model)**2) / len(FIT_DATA_INTENSITIES)
+#
+#     log_likelihood = -0.5 * np.sum(((FIT_DATA_INTENSITIES - I_model)**2 / variance) + np.log(2 * np.pi * variance))
+#
+#     return log_likelihood
+#
+# # log-probability function
+# def logProbability(free_pars, CONSTANTS):
+#     pixel_dimension, PIXEL_COORDS, FIT_RADII, arcsec_per_pix, SR_PER_PIX, FIT_DATA_INTENSITIES, fixed_pars, MODEL_KERNEL, model = CONSTANTS
+#
+#     log_prior = logPrior(free_pars, arcsec_per_pix)
+#     if np.isfinite(log_prior):
+#         log_likelihood = logLikelihood(free_pars, CONSTANTS)
+#         if np.isnan(log_likelihood):
+#             print(f"log_likelihood returned nan, return -infinity")
+#             return -np.inf
+#
+#         return log_likelihood + log_prior
+#     else:
+#         return log_prior
 
 def mcmc(data, nwalkers, burnin_steps, production_steps):
     print("\n----------------------------------------------------------------------------------------------------\n")
@@ -109,16 +112,18 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     total_intensity_radii = 100
 
-    PIXEL_DIMENSION = min(data[0].shape)
-    PIXEL_RADIUS = PIXEL_DIMENSION / 2
-    PIXEL_COORDS = np.linspace(-PIXEL_RADIUS, PIXEL_RADIUS, PIXEL_DIMENSION)
+    pixel_dimension = min(data[0].shape)
+    PIXEL_RADIUS = pixel_dimension / 2
+    PIXEL_COORDS = np.linspace(-PIXEL_RADIUS, PIXEL_RADIUS, pixel_dimension)
     PIXEL_RADII = np.linspace(0, PIXEL_RADIUS, total_intensity_radii)
 
-    ARCSEC_PER_PIX = data[1]["degreesPixelScale"] * 3600
+    arcsec_per_pix = data[1]["degreesPixelScale"] * 3600
     SR_PER_PIX = (data[1]["degreesPixelScale"] * np.pi / 180)**2
 
-    FIT_RADIUS = 5 / ARCSEC_PER_PIX
-    FIT_RADII = np.linspace(0, FIT_RADIUS, total_intensity_radii)
+    fit_radius = 4 / arcsec_per_pix
+    FIT_RADII = np.linspace(0, fit_radius, total_intensity_radii)
+
+    crop_radius = int(np.ceil(fit_radius + (1 / arcsec_per_pix)))
 
     inclination = data[1]["inclination"]
     eccentricity = np.sin(inclination)
@@ -126,7 +131,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     ### Get data intensity profile ----------------------------------------------------------------------------------------------
 
-    FIT_DATA_INTENSITIES = getDataIntensities(data, FIT_RADIUS, eccentricity, rotation)
+    FIT_DATA_INTENSITIES = getDataIntensities(data, fit_radius, eccentricity, rotation)
     TOTAL_DATA_INTENSITIES = getDataIntensities(data, PIXEL_RADIUS, eccentricity, rotation)
 
     ### Setup model -------------------------------------------------------------------------------------------------------------
@@ -141,13 +146,13 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     Sig1 = 0.25 # kg m^-2
 
     # Free parameters guesses
-    Rin = 1 #10 # Pixels
-    Rout = 25 #200 # Pixels
+    Rin = 0.01*pixel_dimension # Pixels
+    Rout = 0.1*pixel_dimension # Pixels
     SigFrac = 3 # Sig2/Sig1
     R1 = (Rin + Rout) / 2 # Pixels
-    p1 = 5
-    p2 = 5
-    q = 5
+    p1 = 1
+    p2 = 1
+    q = 1
 
     fixed_pars = (v, k, i, T0, Sig1)
     free_pars = np.array([Rin, Rout, SigFrac, R1, p1, p2, q])
@@ -166,12 +171,12 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     ndim = len(free_pars)
 
-    CONSTANTS = (PIXEL_DIMENSION, PIXEL_COORDS, FIT_RADII, ARCSEC_PER_PIX, SR_PER_PIX, FIT_DATA_INTENSITIES, fixed_pars, MODEL_KERNEL, model)
+    CONSTANTS = (pixel_dimension, PIXEL_COORDS, FIT_RADII, arcsec_per_pix, SR_PER_PIX, FIT_DATA_INTENSITIES, fixed_pars, MODEL_KERNEL, model, crop_radius)
 
     with Pool() as pool:
 
         print(f"\nInitialize sampler with {nwalkers} walkers and {ndim} free parameters ({free_labels})")
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, logProbability, args=[CONSTANTS], pool=pool)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, logProbability, args=[CONSTANTS, parameter_ranges], pool=pool)
 
         ### Burn-in sampler ---------------------------------------------------------------------------------------------------------
 
@@ -201,9 +206,10 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     # Create directory for saving results
     time = datetime.now().strftime("%d-%m-%Y_%H-%M")
-    dir_name = f"{time}_{model}_{nwalkers}_{ndim}_{burnin_steps}_{production_steps}"
+    dir_name = f"{time}_{model}_{nwalkers}_{burnin_steps}_{production_steps}"
     dir_path = os.path.join(results_directory, dir_name)
     os.mkdir(dir_path)
+    print(f"\nCreated '{dir_name}' directory in results\n")
 
     # Create txt file with initial values
     with open(os.path.join(dir_path, "init.txt"), "a", encoding = "utf-8") as file:
@@ -215,10 +221,11 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
         parameter_txt += f"Burn-in step           {burnin_steps}\n"
         parameter_txt += f"Production steps       {production_steps}\n"
         parameter_txt += f"\n"
-        parameter_txt += f"Image dimension        {PIXEL_DIMENSION} pixels\n"
+        parameter_txt += f"Image dimension        {pixel_dimension} pixels\n"
         parameter_txt += f"Radius of image        {PIXEL_RADIUS} pixels\n"
-        parameter_txt += f"Radius of fit          {FIT_RADIUS} pixels\n"
-        parameter_txt += f"Arcseconds per pixel   {ARCSEC_PER_PIX} arcsec\n"
+        parameter_txt += f"Radius of fit          {fit_radius} pixels\n"
+        parameter_txt += f"Radius of cropping     {crop_radius} pixels\n"
+        parameter_txt += f"Arcseconds per pixel   {arcsec_per_pix} arcsec\n"
         parameter_txt += f"\n"
         parameter_txt += f"v                      {v} Hz\n"
         parameter_txt += f"k                      {k} m^2/kg\n"
@@ -236,6 +243,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     # Visualise burnin steps for each parameter
     fig_name = f"Burn-in"
     fig, axes = plt.subplots(ndim, figsize=(10, 7), sharex=True, num = fig_name)
+
     fig.suptitle(f"Sampler Burn-in steps")
 
     for i, label in enumerate(free_labels):
@@ -248,6 +256,26 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     axes[-1].set_xlabel("step number")
 
     plt.savefig(os.path.join(dir_path, f"{fig_name}.png"))
+    plt.clf()
+    print(f"Saved {fig_name}.png")
+
+    # Visualise production steps for each parameter
+    fig_name = f"Production"
+    fig, axes = plt.subplots(ndim, figsize=(10, 7), sharex=True, num = fig_name)
+
+    fig.suptitle(f"Sampler Production steps")
+
+    for i, label in enumerate(free_labels):
+        ax = axes[i]
+        ax.plot(samples[:, :, i], alpha=0.3)
+        ax.set_xlim(0, len(samples))
+        ax.set_ylabel(label)
+        ax.yaxis.set_label_coords(-0.1, 0.5)
+
+    axes[-1].set_xlabel("step number")
+
+    plt.savefig(os.path.join(dir_path, f"{fig_name}.png"))
+    plt.clf()
     print(f"Saved {fig_name}.png")
 
     # original and convolved model image from mcmc parameters
@@ -266,8 +294,8 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     centerPixel = (data[1]["xCenterPixel"], data[1]["yCenterPixel"])
     pixelDimension = data[0].shape
 
-    extent = [(-centerPixel[0]) * ARCSEC_PER_PIX, (pixelDimension[0] - centerPixel[0]) * ARCSEC_PER_PIX,
-        (-centerPixel[1]) * ARCSEC_PER_PIX, (pixelDimension[1] - centerPixel[1]) * ARCSEC_PER_PIX]
+    extent = [(-centerPixel[0]) * arcsec_per_pix, (pixelDimension[0] - centerPixel[0]) * arcsec_per_pix,
+        (-centerPixel[1]) * arcsec_per_pix, (pixelDimension[1] - centerPixel[1]) * arcsec_per_pix]
 
     fig_name = "Images"
     fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2, 2, figsize = (12,12), num = fig_name)
@@ -285,6 +313,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     ax4.set_title("Convolved model (50th%)")
 
     plt.savefig(os.path.join(dir_path, f"{fig_name}.png"))
+    plt.clf()
     print(f"Saved {fig_name}.png")
 
     # Corner plot
@@ -293,10 +322,11 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     fig.canvas.set_window_title(fig_name)
 
     plt.savefig(os.path.join(dir_path, f"{fig_name}.png"))
+    plt.clf()
     print(f"Saved {fig_name}.png")
 
     # Intensity profile comparison
-    mcmc50th_intensities = getModelIntensities(mcmc_pars50th, PIXEL_COORDS, PIXEL_RADII, SR_PER_PIX, fixed_pars, MODEL_KERNEL, model)
+    mcmc50th_intensities = getModelIntensities(mcmc_pars50th, PIXEL_COORDS, PIXEL_RADII, SR_PER_PIX, fixed_pars, MODEL_KERNEL, model, crop_radius)
 
     model_plots = 25
     sample_indeces = np.random.randint(0, production_steps, model_plots)
@@ -304,9 +334,9 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     print(f"\nGenerating {model_plots} intensity profiles from the flat samples:")
     sample_intensities = []
     for i in tqdm(sample_indeces):
-        sample_intensities.append(getModelIntensities(flat_samples[i], PIXEL_COORDS, PIXEL_RADII, SR_PER_PIX, fixed_pars, MODEL_KERNEL, model))
+        sample_intensities.append(getModelIntensities(flat_samples[i], PIXEL_COORDS, PIXEL_RADII, SR_PER_PIX, fixed_pars, MODEL_KERNEL, model, crop_radius))
 
-    arcsec_radius = PIXEL_RADIUS * ARCSEC_PER_PIX
+    arcsec_radius = PIXEL_RADIUS * arcsec_per_pix
     arcsec_radii = np.linspace(0, arcsec_radius, total_intensity_radii)
 
     # Plot normal
@@ -326,6 +356,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     plt.legend(loc = "best")
 
     plt.savefig(os.path.join(dir_path, f"{fig_name}.png"))
+    plt.clf()
     print(f"Saved {fig_name}.png")
 
     # Plot logarithmic
@@ -346,6 +377,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     plt.legend(loc = "best")
 
     plt.savefig(os.path.join(dir_path, f"{fig_name}.png"))
+    plt.clf()
     print(f"Saved {fig_name}.png")
 
     # Plot logarithmic
@@ -359,7 +391,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     plt.plot(arcsec_radii, mcmc50th_intensities, color = "red", label = "model - 50th")
 
     plt.xlabel("Arcseconds")
-    plt.xlim([0, FIT_RADIUS * ARCSEC_PER_PIX])
+    plt.xlim([0, fit_radius * arcsec_per_pix])
 
     plt.ylabel("Intensity [Jy/beam]")
     plt.yscale('log')
@@ -369,4 +401,5 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     plt.legend(loc = "best")
 
     plt.savefig(os.path.join(dir_path, f"{fig_name}.png"))
+    plt.clf()
     print(f"Saved {fig_name}.png")

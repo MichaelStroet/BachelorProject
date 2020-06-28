@@ -40,15 +40,15 @@ def planckFunction(v, T, sr_per_pix):
 
 ### Dust surface density --------------------------------------------------------------------------------------------------------
 
-def dustSurfaceDensityTWHya(R, Sig0, R_br, p0, p1):
-    """
-    Calculates the dust surface density (Sigma d) from a 2-sloped power law.
-    """
-
-    if R <= R_br:
-        return Sig0 * pow(R / R_br, -p0)
-    else:
-        return Sig0 * pow(R / R_br, -p1)
+# def dustSurfaceDensityTWHya(R, Sig0, R_br, p0, p1):
+#     """
+#     Calculates the dust surface density (Sigma d) from a 2-sloped power law.
+#     """
+#
+#     if R <= R_br:
+#         return Sig0 * pow(R / R_br, -p0)
+#     else:
+#         return Sig0 * pow(R / R_br, -p1)
 
 def dustSurfaceDensitySingle(R, Rin, Sig0, p):
     """
@@ -70,11 +70,11 @@ def dustSurfaceDensityDouble(R, Sig1, SigFrac, R1, p1, p2):
 
 ### Dust optical depth ----------------------------------------------------------------------------------------------------------
 
-def dustOpticalDepthTWHya(R, Sig0, R_br, p0, p1, k, i):
-    """
-    Calculates the dust optical depth (tau) for radius R.
-    """
-    return dustSurfaceDensityTWHya(R, Sig0, R_br, p0, p1) * k * np.cos(i)
+# def dustOpticalDepthTWHya(R, Sig0, R_br, p0, p1, k, i):
+#     """
+#     Calculates the dust optical depth (tau) for radius R.
+#     """
+#     return dustSurfaceDensityTWHya(R, Sig0, R_br, p0, p1) * k * np.cos(i)
 
 def dustOpticalDepthSingle(R, Rin, Sig0, p, k, i):
     """
@@ -90,17 +90,17 @@ def dustOpticalDepthDouble(R, Sig1, SigFrac, R1, p1, p2, k, i):
 
 ### Disk temperature  -----------------------------------------------------------------------------------------------------------
 
-def diskTemperatureTWHya(R, R0, T0, q0, q1):
-    """
-    Calculates the temperature at radius R from a broken power law.
-    """
+# def diskTemperatureTWHya(R, R0, T0, q0, q1):
+#     """
+#     Calculates the temperature at radius R from a broken power law.
+#     """
+#
+#     if R <= R0:
+#         return T0 * pow(R / R0, -q0)
+#     else:
+#         return T0 * pow(R / R0, -q1)
 
-    if R <= R0:
-        return T0 * pow(R / R0, -q0)
-    else:
-        return T0 * pow(R / R0, -q1)
-
-def diskTemperatureSingle(R, Rin, T0, q):
+def diskTemperature(R, Rin, T0, q):
     """
     Calculates the temperature at radius R from a single power law.
     """
@@ -109,28 +109,28 @@ def diskTemperatureSingle(R, Rin, T0, q):
 
 ### Thermal continuum intensity -------------------------------------------------------------------------------------------------
 
-def thermalIntensityTWHya(R, sr_per_pix, fixed_pars, free_pars):
-    """
-    Calculates the thermal intensity from the dust at radius R.
-    """
-
-    v, k, i = fixed_pars
-    Rin, Rout, T0, R_br, p0, p1, Sig0, q0, q1, R0 = free_pars
-
-    T_disk = diskTemperatureTWHya(R, R0, T0, q0, q1)
-    optical_depth = dustOpticalDepthTWHya(R, Sig0, R_br, p0, p1, k, i)
-
-    return planckFunction(v, T_disk, sr_per_pix) * (1 - np.exp(-optical_depth))
+# def thermalIntensityTWHya(R, sr_per_pix, fixed_pars, free_pars):
+#     """
+#     Calculates the thermal intensity from the dust at radius R.
+#     """
+#
+#     v, k, i = fixed_pars
+#     Rin, Rout, T0, R_br, p0, p1, Sig0, q0, q1, R0 = free_pars
+#
+#     T_disk = diskTemperatureTWHya(R, R0, T0, q0, q1)
+#     optical_depth = dustOpticalDepthTWHya(R, Sig0, R_br, p0, p1, k, i)
+#
+#     return planckFunction(v, T_disk, sr_per_pix) * (1 - np.exp(-optical_depth))
 
 def thermalIntensitySingle(R, sr_per_pix, fixed_pars, free_pars):
     """
     Calculates the thermal intensity from the dust at radius R.
     """
 
-    v, k, i, T0, Sig0 = fixed_pars
-    Rin, Rout, p, q = free_pars
+    v, k, i, T0, q, Sig0 = fixed_pars
+    Rin, Rout, p = free_pars
 
-    T_disk = diskTemperatureSingle(R, Rin, T0, q)
+    T_disk = diskTemperature(R, Rin, T0, q)
     optical_depth = dustOpticalDepthSingle(R, Rin, Sig0, p, k, i)
 
     return planckFunction(v, T_disk, sr_per_pix) * (1 - np.exp(-optical_depth))
@@ -143,196 +143,215 @@ def thermalIntensityDouble(R, sr_per_pix, fixed_pars, free_pars):
     v, k, i, T0, Sig1 = fixed_pars
     Rin, Rout, SigFrac, R1, p1, p2, q = free_pars
 
-    T_disk = diskTemperatureSingle(R, Rin, T0, q)
+    T_disk = diskTemperature(R, Rin, T0, q)
     optical_depth = dustOpticalDepthDouble(R, Sig1, SigFrac, R1, p1, p2, k, i)
 
     return planckFunction(v, T_disk, sr_per_pix) * (1 - np.exp(-optical_depth))
 
-# if __name__ == "__main__":
-#
-#     import os, sys
-#     import matplotlib.pyplot as plt
-#
-#     def pyName():
-#         return __file__.split("\\")[-1].replace(".py", "")
-#
-#     root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-#     figures_directory = root_directory + "\\data\\codeFigures\\"
-#
-#     # Parameters
-#     v = 365.5e9 # Hz
-#     R0 = 7 # AU
-#     T0 = 27 # K
-#     q = 0.5
-#     q0 = 2.6
-#     q1 = 0.26
-#     k = 0.34 # m^2 kg^-1 (at 365.5 GHz)
-#     Sig0 = 0.25 # kg m^-2 (guess)
-#     Sig1 = 1 # kg m^-2 (guess)
-#     Sig2 = 0.3 # kg m^-2 (guess)
-#     R_br = 47 # AU
-#     R_1 = R_br
-#     p = 2
-#     p0 = 0.53
-#     p1 = 8.0
-#     p2 = 5
-#     i = 0.0*np.pi # [0, np.pi/2]
-#
-#     R = 10 # AU
-#     Rin = 2 # AU
-#     Rout = 200 # AU
-#
-#     sr_per_pix = 9.4e-13
-#     fixed_pars = (v, k, i)
-#     free_pars = [Rin, Rout, T0, R_br, p0, p1, Sig0, q0, q1, R0]
-#
-#     # Test planckFunction
-#     temperature = diskTemperatureSingle(R, Rin, T0, q)
-#
-#     frequencies = np.linspace(0.1, 1e13, 1000)
-#     intensities = []
-#
-#     for frequency in frequencies:
-#         intensities.append(planckFunction(frequency, temperature, sr_per_pix))
-#
-#     plt.figure("planckFunction", figsize = (10, 5))
-#
-#     plt.plot(frequencies / 1e9, intensities)
-#
-#     plt.title(f"planckFunction, R = {R} AU -> T = {temperature:.2f} K")
-#     plt.xlabel("Frequency [GHz]")
-#     plt.ylabel("Intensity [Jy/pixel]")
-#
-#     plt.savefig(figures_directory + pyName() + "-" + "planckFunction.png")
-#
-#     # Test dustSurfaceDensityTWHya
-#
-#     radii = np.linspace(Rin, Rout, 1000)
-#     densities = []
-#
-#     for radius in radii:
-#         densities.append(dustSurfaceDensityTWHya(radius, Sig0, R_br, p0, p1))
-#
-#     plt.figure("dustSurfaceDensityTWHya", figsize = (10, 5))
-#
-#     plt.plot(radii, densities)
-#     plt.yscale('log')
-#
-#     plt.title("dustSurfaceDensityTWHya")
-#     plt.xlabel("Radius [AU]")
-#     plt.ylabel("Surface density [kg/m^2]")
-#
-#     plt.savefig(figures_directory + pyName() + "-" + "dustSurfaceDensityTWHya.png")
-#
-#     # Test dustSurfaceDensitySingle
-#
-#     radii = np.linspace(Rin, Rout, 1000)
-#     densities = []
-#
-#     for radius in radii:
-#         densities.append(dustSurfaceDensitySingle(radius, Sig0, R_br, p))
-#
-#     plt.figure("dustSurfaceDensitySingle", figsize = (10, 5))
-#
-#     plt.plot(radii, densities)
-#     plt.yscale('log')
-#
-#     plt.title("dustSurfaceDensitySingle")
-#     plt.xlabel("Radius [AU]")
-#     plt.ylabel("Surface density [kg/m^2]")
-#
-#     plt.savefig(figures_directory + pyName() + "-" + "dustSurfaceDensitySingle.png")
-#
-#     # Test dustSurfaceDensityDouble
-#
-#     radii = np.linspace(Rin, Rout, 1000)
-#     densities = []
-#
-#     for radius in radii:
-#         densities.append(dustSurfaceDensityDouble(radius, Sig1, Sig2, R_1, p1, p2))
-#
-#     plt.figure("dustSurfaceDensityDouble", figsize = (10, 5))
-#
-#     plt.plot(radii, densities)
-#     plt.yscale('log')
-#
-#     plt.title("dustSurfaceDensityDouble")
-#     plt.xlabel("Radius [AU]")
-#     plt.ylabel("Surface density [kg/m^2]")
-#
-#     plt.savefig(figures_directory + pyName() + "-" + "dustSurfaceDensityDouble.png")
-#
-#     # Test dustOpticalDepth
-#
-#     radii = np.linspace(Rin, Rout, 1000)
-#     optical_depths = []
-#
-#     for radius in radii:
-#         optical_depths.append(dustOpticalDepth(radius, Sig0, R_br, p0, p1, k, i))
-#
-#     plt.figure("dustOpticalDepth", figsize = (10, 5))
-#
-#     plt.plot(radii, optical_depths)
-#     plt.yscale('log')
-#
-#     plt.title(f"dustOpticalDepth, i = {i/np.pi} π")
-#     plt.xlabel("Radius [AU]")
-#     plt.ylabel("Optical depth")
-#
-#     plt.savefig(figures_directory + pyName() + "-" + "dustOpticalDepth.png")
-#
-#
-#     # Test diskTemperatureSingle
-#     radii = np.linspace(Rin, Rout, 1000)
-#     temperatures = []
-#
-#     for R in radii:
-#         temperatures.append(diskTemperatureSingle(R, Rin, T0, q))
-#
-#     plt.figure("diskTemperatureSingle", figsize = (10, 5))
-#
-#     plt.plot(radii, temperatures)
-#     plt.yscale('log')
-#
-#     plt.title("diskTemperatureSingle")
-#     plt.xlabel("Radius [AU]")
-#     plt.ylabel("Temperature [K]")
-#
-#     # Test diskTemperatureDouble
-#     radii = np.linspace(Rin, Rout, 1000)
-#     temperatures = []
-#
-#     for R in radii:
-#         temperatures.append(diskTemperatureDouble(R, R_1, T0, q0, q1))
-#
-#     plt.figure("diskTemperatureDouble", figsize = (10, 5))
-#
-#     plt.plot(radii, temperatures)
-#     plt.yscale('log')
-#
-#     plt.title("diskTemperatureDouble")
-#     plt.xlabel("Radius [AU]")
-#     plt.ylabel("Temperature [K]")
-#
-#     plt.savefig(figures_directory + pyName() + "-" + "diskTemperatureDouble.png")
-#
-#     # Test thermalIntensity
-#
-#     radii = np.linspace(Rin, Rout, 1000)
-#     thermal_intensities = []
-#
-#     for radius in radii:
-#         thermal_intensities.append(thermalIntensity(radius, sr_per_pix, fixed_pars, free_pars))
-#
-#     plt.figure("thermalIntensity", figsize = (10, 5))
-#
-#     plt.plot(radii, thermal_intensities)
-#     plt.yscale('log')
-#
-#     plt.title(f"Thermal continuum, v = {v/1e9}GHz, i = {i/np.pi}π")
-#     plt.xlabel("Radius [AU]")
-#     plt.ylabel("Intensity [Jy/pixel]")
-#
-#     plt.savefig(figures_directory + pyName() + "-" + "thermalIntensity.png")
-#
-#     plt.show()
+if __name__ == "__main__":
+
+    import os, sys
+    import matplotlib.pyplot as plt
+
+    root_directory = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    data_directory = os.path.join(root_directory, "data")
+    ALMA_directory = os.path.join(data_directory, "ALMA-HD100546")
+
+    from fitsFiles import *
+
+    degreesToRadian = (np.pi / 180)
+    HD100546_i = 42.46 * degreesToRadian #radian
+    HD100546_PA = 139.1 * degreesToRadian #radian
+
+    ALMA_filenames = os.listdir(ALMA_directory)
+    relevant_headers = ["BMAJ", "BMIN", "BPA", "CRPIX1", "CRPIX2", "CDELT2"]
+    descriptions = ["beamSemiMajor", "beamSemiMinor", "beamPA", "xCenterPixel", "yCenterPixel", "degreesPixelScale"]
+
+    ALMA_data = getFitsData(ALMA_filenames, ALMA_directory, relevant_headers, descriptions)
+    printFitsData(ALMA_filenames, ALMA_data)
+
+    file_index = 0
+    data = ALMA_data[file_index]
+
+    # Set negative noise from the image to zero
+    data[0][np.where(data[0] < 0.0)] = 0.0
+
+    arcsec_per_pix = data[1]["degreesPixelScale"] * 3600
+    sr_per_pix = (data[1]["degreesPixelScale"] * np.pi / 180)**2
+
+    v = 225e9 # Hz (219-235 GHz)
+    k = 0.21 # m^2/kg (linearly scaled from 0.34 @ 365.5 GHz)
+    i = HD100546_i # radian
+    T0 = 30 # K
+    Sig0 = 0.25 # kg m^-2
+
+    Rin = 0.6
+    Rout = 2
+    p = 0.1
+    q = 1.8
+
+    fixed_pars = (v, k, i, T0, q, Sig0)
+    free_pars = [Rin, Rout, p]
+
+    total_intensity_radii = 100
+
+    data_dimension = data[0].shape[0]
+    data_radius = data_dimension / 2
+    data_coords = np.linspace(-data_radius, data_radius, data_dimension)
+
+    ### -------------------------------------------------------------------------------------------
+
+    data_matrix = np.zeros((len(data_coords), len(data_coords)))
+
+    for i, x in enumerate(data_coords):
+        for j, y in enumerate(data_coords):
+            radius = np.sqrt(x**2 + y**2) * arcsec_per_pix
+            if radius >= Rin and radius <= Rout:
+                data_matrix[i, j] = thermalIntensitySingle(radius, sr_per_pix, fixed_pars, free_pars)
+
+    print(data_matrix)
+
+    data_centerPixel = [data_dimension / 2, data_dimension / 2]
+    data_extent = [(-data_centerPixel[0]) * arcsec_per_pix, (data_dimension - data_centerPixel[0]) * arcsec_per_pix,
+        (-data_centerPixel[1]) * arcsec_per_pix, (data_dimension - data_centerPixel[1]) * arcsec_per_pix]
+
+    plt.figure("data")
+    plt.imshow(data_matrix, origin = "lower", extent = data_extent, cmap = "inferno")
+    plt.xlim([-1,1])
+    plt.ylim([-1,1])
+
+    plt.title("'data'-scale model")
+    plt.colorbar()
+    ### -------------------------------------------------------------------------------------------
+
+    model_scale = 3
+
+    model_arcsec_per_pix = arcsec_per_pix / model_scale
+    model_sr_per_pix = sr_per_pix / model_scale
+
+    model_dimension = model_scale * data_dimension
+    model_radius = model_scale * data_radius
+    model_coords = np.linspace(-model_radius, model_radius, model_dimension)
+
+    model_Rin = Rin * model_scale
+    model_Rout = Rout * model_scale
+
+    model_free_pars = [model_Rin, model_Rout, p]
+
+    ### -------------------------------------------------------------------------------------------
+
+    model_matrix = np.zeros((len(model_coords), len(model_coords)))
+
+    for i, x in enumerate(model_coords):
+        for j, y in enumerate(model_coords):
+            radius = np.sqrt(x**2 + y**2) * (arcsec_per_pix * model_scale)
+            if radius >= model_Rin and radius <= model_Rout:
+                model_matrix[i, j] = thermalIntensitySingle(radius, model_sr_per_pix, fixed_pars, model_free_pars)
+
+    print(model_matrix)
+
+    model_centerPixel = [model_dimension / 2, model_dimension / 2]
+    model_extent = [(-model_centerPixel[0]) * model_arcsec_per_pix, (model_dimension - model_centerPixel[0]) * model_arcsec_per_pix,
+        (-model_centerPixel[1]) * model_arcsec_per_pix, (model_dimension - model_centerPixel[1]) * model_arcsec_per_pix]
+
+    plt.figure("model")
+    plt.imshow(model_matrix, origin = "lower", extent = model_extent, cmap = "inferno")
+    plt.xlim([-1,1])
+    plt.ylim([-1,1])
+
+    plt.title(f"{model_scale}-scale model")
+    plt.colorbar()
+
+    ### -------------------------------------------------------------------------------------------
+
+    total_intensity_radii = 100
+
+    Rin = 0.01
+    Rout = 30 / arcsec_per_pix
+
+    radii = np.linspace(Rin, Rout, total_intensity_radii)
+    arcsec_radii = np.linspace(Rin*arcsec_per_pix, Rout*arcsec_per_pix, total_intensity_radii)
+
+    p_values = np.linspace(0, 3, 9)
+
+    ### -------------------------------------------------------------------------------------------
+
+    plt.figure("dust_surface_densities")
+    for p in p_values:
+        surface_density = []
+        for radius in radii:
+            surface_density.append(dustSurfaceDensitySingle(radius, Rin, Sig0, p))
+
+        plt.plot(arcsec_radii, surface_density, label = f"p = {p:.2f}")
+
+    plt.title("dust_surface_densities")
+    plt.xlabel("Radius (arcseconds)")
+    plt.yscale("log")
+    plt.legend(loc = "best")
+
+    ### -------------------------------------------------------------------------------------------
+
+    plt.figure("dust_optical_depths")
+    for p in p_values:
+        optical_depth = []
+        for radius in radii:
+            optical_depth.append(dustOpticalDepthSingle(radius, Rin, Sig0, p, k, i))
+
+        plt.plot(arcsec_radii, optical_depth, label = f"p = {p:.2f}")
+
+    plt.title("dust_optical_depths")
+    plt.xlabel("Radius (arcseconds)")
+    plt.yscale("log")
+    plt.legend(loc = "best")
+    ### -------------------------------------------------------------------------------------------
+
+    plt.figure("disk_temperatures")
+    for p in p_values:
+        disk_temperature = []
+        for radius in radii:
+            disk_temperature.append(diskTemperature(radius, Rin, T0, q))
+
+        plt.plot(arcsec_radii, disk_temperature, label = f"p = {p:.2f}")
+
+    plt.title("disk_temperatures")
+    plt.xlabel("Radius (arcseconds)")
+    plt.yscale("log")
+    plt.legend(loc = "best")
+
+    ### -------------------------------------------------------------------------------------------
+
+    plt.figure("intensities")
+    for p in p_values:
+        free_pars = [Rin, Rout, p]
+        intensity_profile = []
+        for radius in radii:
+            intensity_profile.append(thermalIntensitySingle(radius, sr_per_pix, fixed_pars, free_pars))
+
+        plt.plot(arcsec_radii, intensity_profile, label = f"p = {p:.2f}")
+
+    plt.title("intensities")
+    plt.xlabel("Radius (arcseconds)")
+    plt.yscale("log")
+    plt.legend(loc = "best")
+
+    ### -------------------------------------------------------------------------------------------
+
+    plt.figure("intensities_normalised")
+    for p in p_values:
+        free_pars = [Rin, Rout, p]
+        intensity_profile = []
+        for radius in radii:
+            intensity_profile.append(thermalIntensitySingle(radius, sr_per_pix, fixed_pars, free_pars))
+
+        intensity_profile = np.asarray(intensity_profile)
+        intensity_max = np.max(intensity_profile)
+
+        plt.plot(arcsec_radii, intensity_profile / intensity_max, label = f"p = {p:.2f}")
+
+    plt.title("intensities_normalised")
+    plt.yscale("log")
+    plt.legend(loc = "best")
+
+    ### -------------------------------------------------------------------------------------------
+
+    plt.show()
