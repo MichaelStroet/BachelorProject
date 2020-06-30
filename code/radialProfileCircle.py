@@ -1,24 +1,16 @@
 # Michael Stroet  11293284
 
-# Extracts a radial profile from a 2D image
+# Extracts a radial profile from a 2D image using concentric circles
 
 import numpy as np
-
 from scipy.ndimage import map_coordinates
-from astropy.convolution import convolve, Gaussian2DKernel
-
-from modelImage import loadImageTXT, plotImage
-from convolution import convolveImageGaussian2D
-
-N_RADII = 100
-N_ANGLES = 100
 
 def getCircleCoordinates(center, R):
     """
     Returns coordinates for a circle of radius 'R' centered at 'center'
     """
 
-    angles = np.linspace(0, 2*np.pi, N_ANGLES)
+    angles = np.linspace(0, 2*np.pi, 1000)
 
     coordinates = [[], []]
     for angle in angles:

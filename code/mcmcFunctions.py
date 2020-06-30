@@ -8,25 +8,24 @@ from astropy.convolution import convolve
 from radialProfileCircle import getCircleProfile
 from radialProfileEllipse import getEllipseProfile
 
-def getDataIntensities(data, max_radius, eccentricity, rotation):
+def getDataIntensities(data, radii, eccentricity, rotation):
 
     convolved_image = convolveDataImage(data)
-
-    data_intensities = np.asarray(getEllipseProfile(convolveDataImage(data), max_radius, eccentricity, rotation))
+    data_intensities = np.asarray(getEllipseProfile(convolved_image, radii, eccentricity, rotation))
     data_max = np.max(data_intensities)
 
     # Return the intensities scaled in such a way that the peak is at 1
     return data_intensities / data_max
 
-def getModelIntensities(free_pars, PIXEL_COORDS, radii, arcsec_per_pix, SR_PER_PIX, FIXED_PARS, MODEL_KERNEL, model, crop_radius, crop = False):
+def getModelIntensities(free_pars, pixel_coords, radii, arcsec_per_pix, sr_per_pix, fixed_pars, model_kernel, model, crop_radius, crop = False):
 
     # generate the model image
-    model_image = getImageMatrix(FIXED_PARS, free_pars, PIXEL_COORDS, arcsec_per_pix, SR_PER_PIX, model)
+    model_image = getImageMatrix(fixed_pars, free_pars, pixel_coords, arcsec_per_pix, sr_per_pix, model)
     if crop:
         model_image = cropImage(model_image, crop_radius)
 
     # Convolve model with the combined "round" kernel
-    convolved_model_image = convolve(model_image, MODEL_KERNEL)
+    convolved_model_image = convolve(model_image, model_kernel)
 
     # Generate a radial intensity profile from the model image
     model_intensities = np.asarray(getCircleProfile(convolved_model_image, radii))
@@ -39,19 +38,19 @@ def getModelIntensities(free_pars, PIXEL_COORDS, radii, arcsec_per_pix, SR_PER_P
     return model_intensities / model_max
 
 # log-prior function
-def logPrior(free_pars, arcsec_per_pix, parameter_ranges):
+def logPrior(free_pars, pars_ranges):
 
-    for parameter, range in zip(free_pars, parameter_ranges(free_pars, arcsec_per_pix)):
+    for parameter, range in zip(free_pars, pars_ranges):
         if not range[0] <= parameter <= range[1]:
             return -np.inf
 
     return 0
 
 # log-likelihood function
-def logLikelihood(free_pars, CONSTANTS):
-    PIXEL_DIMENSION, PIXEL_COORDS, fit_radii, arcsec_per_pix, SR_PER_PIX, FIT_DATA_INTENSITIES, FIXED_PARS, MODEL_KERNEL, model, crop_radius = CONSTANTS
+def logLikelihood(free_pars, constants):
+    pars_ranges, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius = constants
 
-    I_model = getModelIntensities(free_pars, PIXEL_COORDS, fit_radii, arcsec_per_pix, SR_PER_PIX, FIXED_PARS, MODEL_KERNEL, model, crop_radius, True)
+    I_model = getModelIntensities(free_pars, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, fixed_pars, model_kernel, model, crop_radius, True)
     variance = np.sum((FIT_DATA_INTENSITIES - I_model)**2) / len(FIT_DATA_INTENSITIES)
 
     log_likelihood = -0.5 * np.sum(((FIT_DATA_INTENSITIES - I_model)**2 / variance) + np.log(2 * np.pi * variance))
@@ -59,12 +58,12 @@ def logLikelihood(free_pars, CONSTANTS):
     return log_likelihood
 
 # log-probability function
-def logProbability(free_pars, CONSTANTS, parameter_ranges):
-    PIXEL_DIMENSION, PIXEL_COORDS, fit_radii, arcsec_per_pix, SR_PER_PIX, FIT_DATA_INTENSITIES, FIXED_PARS, MODEL_KERNEL, model, crop_radius = CONSTANTS
+def logProbability(free_pars, constants):
+    pars_ranges, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius = constants
 
-    log_prior = logPrior(free_pars, arcsec_per_pix, parameter_ranges)
+    log_prior = logPrior(free_pars, pars_ranges)
     if np.isfinite(log_prior):
-        log_likelihood = logLikelihood(free_pars, CONSTANTS)
+        log_likelihood = logLikelihood(free_pars, constants)
         if np.isnan(log_likelihood):
             print(f"log_likelihood returned nan, return -infinity")
             return -np.inf
