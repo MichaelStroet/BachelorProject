@@ -8,14 +8,28 @@ from astropy.convolution import convolve
 from radialProfileCircle import getCircleProfile
 from radialProfileEllipse import getEllipseProfile
 
-def getDataIntensities(data, radii, eccentricity, rotation):
+def getDataIntensities(convolved_data, radii, eccentricity, rotation, variance_range = None):
 
-    convolved_image = convolveDataImage(data)
-    data_intensities = np.asarray(getEllipseProfile(convolved_image, radii, eccentricity, rotation))
+    data_intensities = np.asarray(getEllipseProfile(convolved_data, radii, eccentricity, rotation))
     data_max = np.max(data_intensities)
 
-    # Return the intensities scaled in such a way that the peak is at 1
-    return data_intensities / data_max
+    if variance_range:
+
+        # Find indeces of the radii in the variance range
+        variance_intensities = []
+        for i, radius in enumerate(radii):
+            if variance_range[0] <= radius <= variance_range[1]:
+                variance_intensities.append(data_intensities[i])
+
+        variance = sum(variance_intensities) / len(variance_intensities)
+
+        # Return the intensities scaled in such a way that the peak is at 1 and
+        # the variance scaled by the same factor
+        return data_intensities / data_max, variance / data_max
+
+    else:
+        # Return the intensities scaled in such a way that the peak is at 1
+        return data_intensities / data_max
 
 def getModelIntensities(free_pars, pixel_coords, radii, arcsec_per_pix, sr_per_pix, fixed_pars, model_kernel, model, crop_radius, crop = False):
 
@@ -48,18 +62,16 @@ def logPrior(free_pars, pars_ranges):
 
 # log-likelihood function
 def logLikelihood(free_pars, constants):
-    pars_ranges, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius = constants
+    pars_ranges, variance, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius = constants
 
     I_model = getModelIntensities(free_pars, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, fixed_pars, model_kernel, model, crop_radius, True)
-    variance = np.sum((FIT_DATA_INTENSITIES - I_model)**2) / len(FIT_DATA_INTENSITIES)
-
     log_likelihood = -0.5 * np.sum(((FIT_DATA_INTENSITIES - I_model)**2 / variance) + np.log(2 * np.pi * variance))
 
     return log_likelihood
 
 # log-probability function
 def logProbability(free_pars, constants):
-    pars_ranges, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius = constants
+    pars_ranges, variance, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius = constants
 
     log_prior = logPrior(free_pars, pars_ranges)
     if np.isfinite(log_prior):

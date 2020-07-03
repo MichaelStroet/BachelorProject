@@ -24,9 +24,9 @@ from mcmcFunctions import *
 def parameter_ranges():
 
     ranges = []
-    ranges.append([0.05, 0.15])  # Rin (arcseconds)
-    ranges.append([0.5, 1.5])     # Rout (arcseconds)
-    ranges.append([0.5, 1.5])       # p
+    ranges.append([0.01, 0.20])  # Rin (arcseconds)
+    ranges.append([0.21, 1])     # Rout (arcseconds)
+    ranges.append([0, 5])       # p
 
     return ranges
 
@@ -48,7 +48,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     sr_per_pix = (data[1]["degreesPixelScale"] * np.pi / 180)**2
 
     fit_radius = 2 # Arcseconds
-    fit_radii = np.linspace(0, fit_radius, total_intensity_radii) # Arcseconds
+    fit_radii = np.linspace(0, fit_radius / arcsec_per_pix, total_intensity_radii) # pixels
 
     crop_radius = int(np.ceil((fit_radius + 0.5) / arcsec_per_pix)) # pixels
 
@@ -59,8 +59,14 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     ### Get data intensity profile ----------------------------------------------------------------------------------------------
 
     print("\nGenerating data intensity profiles.")
-    FIT_DATA_INTENSITIES = getDataIntensities(data, fit_radii, eccentricity, rotation)
-    TOTAL_DATA_INTENSITIES = getDataIntensities(data, pixel_radii, eccentricity, rotation)
+    convolved_data = convolveDataImage(data)
+    variance_range = [1.25 / arcsec_per_pix, 1.75 / arcsec_per_pix]
+
+    FIT_DATA_INTENSITIES, variance = getDataIntensities(convolved_data, fit_radii, eccentricity, rotation, variance_range)
+    TOTAL_DATA_INTENSITIES = getDataIntensities(convolved_data, pixel_radii, eccentricity, rotation)
+
+    print(f"\nvariance_range: {variance_range}")
+    print(f"variance: {variance}")
 
     ### Setup model -------------------------------------------------------------------------------------------------------------
 
@@ -76,8 +82,8 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     # Free parameters guesses
     Rin = 0.1 # Arcseconds
-    Rout = 1  # Arcseconds
-    p = 1
+    Rout = 0.5  # Arcseconds
+    p = 1.5
 
     fixed_pars = (v, k, i, T0, q, Sig0)
     free_pars = np.array([Rin, Rout, p])
@@ -98,7 +104,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     ndim = len(free_pars)
 
-    CONSTANTS = (pars_ranges, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius)
+    CONSTANTS = (pars_ranges, variance, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius)
 
     with Pool() as pool:
 
@@ -234,6 +240,11 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     fig_name = "Images"
     fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(2, 2, figsize = (12,12), num = fig_name)
 
+    ax1.imshow(data_image, origin="lower", norm=LogNorm(), cmap="inferno", extent = extent)
+    ax1.set_title("Original data")
+
+    ax2.imshow(model_image, origin="lower", norm=LogNorm(), cmap="inferno", extent = extent)
+    ax2.set_title("Original model (50th%)")
 
     ax3.imshow(convolved_data, origin="lower", norm=LogNorm(), cmap="inferno", extent = extent)
     ax3.set_title("Convolved data")

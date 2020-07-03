@@ -21,18 +21,18 @@ from modelImage import *
 from convolution import *
 from mcmcFunctions import *
 
-def parameter_ranges(R1):
+def parameter_ranges():
 
     ranges = []
-    ranges.append([R1, 5])  # Rout (arcseconds)
-    ranges.append([0,  2])  # SigFrac = Sig2/Sig1
-    ranges.append([0,  3])  # p2
+    ranges.append([0.01, 0.20])  # Rin (arcseconds)
+    ranges.append([0.21, 1])     # Rout (arcseconds)
+    ranges.append([0, 5])       # c
 
     return ranges
 
 def mcmc(data, nwalkers, burnin_steps, production_steps):
     print("\n----------------------------------------------------------------------------------------------------\n")
-    print("   emcee - Markov chain Monte Carlo - Double model")
+    print("   emcee - Markov chain Monte Carlo - Gaussian model")
     print("\n----------------------------------------------------------------------------------------------------\n")
 
     ### Generate constants -----------------------------------------------------------------------------------------------
@@ -70,11 +70,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     ### Setup model -------------------------------------------------------------------------------------------------------------
 
-    model = "double"
-
-    single_Rin = 0.11
-    single_Rout = 0.89
-    single_p = 0.81
+    model = "gaussian"
 
     # Fixed parameters
     v = 225e9 # Hz (219-235 GHz)
@@ -82,23 +78,21 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     i = inclination # radian
     T0 = 30 # K
     q = 0.25
-    Sig1 = 0.25 # kg m^-2
-    Rin = single_Rin
-    R1 = single_Rout
-    p1 = single_p
+    Sig0 = 0.25 # kg m^-2
 
-    # Free parameters
-    Rout = 3
-    SigFrac = 1 # Sig2/Sig1
-    p2 = 1
+    # Free parameters guesses
+    Rin = 0.1 # Arcseconds
+    Rout = 0.5  # Arcseconds
+    c = 1
 
-    fixed_pars = (v, k, i, T0, q, Sig1, Rin, R1, p1)
-    free_pars = np.array([Rout, SigFrac, p2])
-    free_labels = ["Rout", "SigFrac", "p2"]
+    fixed_pars = (v, k, i, T0, q, Sig0)
+    free_pars = np.array([Rin, Rout, c])
+    free_labels = ["Rin", "Rout", "c"]
 
-    pars_ranges = parameter_ranges(R1)
+    pars_ranges = parameter_ranges()
 
     # Generate the convolution kernels for the model image
+    print(f"\nGenerating model kernels")
     model_kernel_area, model_kernel_peak = generateModelKernels(data)
 
     model_kernel = model_kernel_area
@@ -120,7 +114,6 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
         ### Burn-in sampler ---------------------------------------------------------------------------------------------------------
 
         start_locations = free_pars + (1e-3 * free_pars) * np.random.randn(nwalkers, ndim)
-
 
         print(f"\nRunning {burnin_steps} burn-in steps:")
         burnin_state = sampler.run_mcmc(start_locations, burnin_steps, progress = True)
@@ -157,7 +150,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     # Create txt file with initial values
     with open(os.path.join(dir_path, "init.txt"), "a", encoding = "utf-8") as file:
-        parameter_txt = "Choices, constants and initial parameters\n"
+        parameter_txt = "Choices, constants an%d initial parameters\n"
         parameter_txt += f"\n"
         parameter_txt += f"Convolution kernel     {kernel_used} normalised\n"
         parameter_txt += f"Free parameters        {free_labels}\n"
@@ -175,15 +168,11 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
         parameter_txt += f"k                      {k} m^2/kg\n"
         parameter_txt += f"i                      {i} radian\n"
         parameter_txt += f"R in                   {Rin} arcseconds\n"
-        parameter_txt += f"R1                     {R1} arcseconds\n"
         parameter_txt += f"R out                  {Rout} arcseconds\n"
         parameter_txt += f"T0                     {T0} K\n"
         parameter_txt += f"q                      {q}\n"
-        parameter_txt += f"SigmaFrac              {SigFrac} Sig2/Sig1\n"
-        parameter_txt += f"Sigma1                 {Sig1} kg/m^2\n"
-        parameter_txt += f"Sigma2                 {SigFrac * Sig1} kg/m^2\n"
-        parameter_txt += f"p1                     {p1}\n"
-        parameter_txt += f"p2                     {p2}\n"
+        parameter_txt += f"Sigma0                 {Sig0} kg/m^2\n"
+        parameter_txt += f"c                      {c}\n"
         parameter_txt += f"\n"
         parameter_txt += f"Free parameters:\n{free_labels}\n"
         parameter_txt += f"Free parameter ranges:\n"

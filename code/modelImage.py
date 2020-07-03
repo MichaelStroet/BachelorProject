@@ -32,11 +32,15 @@ def getImageMatrix(fixed_pars, free_pars, pixel_coords, arcsec_per_pix, sr_per_p
         Rin = fixed_pars[6]
         Rout = free_pars[0]
 
+    elif model == "gaussian":
+        from equations import thermalIntensityGaussian as thermalIntensity
+
+        Rin = free_pars[0]
+        Rout = free_pars[1]
+
     else:
         print(f"Error: Unknown model {model}")
         exit(1)
-
-
 
     matrix = np.zeros((len(pixel_coords), len(pixel_coords)))
 

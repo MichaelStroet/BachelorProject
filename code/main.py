@@ -11,6 +11,7 @@ ALMA_directory = os.path.join(data_directory, "ALMA-HD100546")
 from mcmcTWHya import mcmc as mcmcTWHya
 from mcmcSingle import mcmc as mcmcSingle
 from mcmcDouble import mcmc as mcmcDouble
+from mcmcGaussian import mcmc as mcmcGaussian
 
 from fitsFiles import *
 
@@ -40,9 +41,10 @@ if __name__ == "__main__":
     data[1]["inclination"] = HD100546_i
     data[1]["positionAngleMin90"] = HD100546_PA - (90 * degreesToRadian)
 
-    nwalkers = 10
-    burnin_steps = 30
-    production_steps = 30
+    nwalkers = 30
+    burnin_steps = 50
+    production_steps = 50
 
-    mcmcSingle(data, nwalkers, burnin_steps, production_steps)
+    # mcmcSingle(data, nwalkers, burnin_steps, production_steps)
+    mcmcGaussian(data, nwalkers, burnin_steps, production_steps)
     # mcmcDouble(data, nwalkers, burnin_steps, production_steps)
