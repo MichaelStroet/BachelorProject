@@ -110,7 +110,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     ndim = len(free_pars)
 
-    CONSTANTS = (pars_ranges, variance, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius)
+    CONSTANTS = (pars_ranges, variance, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius)
 
     with Pool() as pool:
 

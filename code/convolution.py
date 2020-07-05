@@ -36,11 +36,11 @@ def convolveDataImage(data):
 
     return convolve(image, kernel)
 
-def generateModelKernels(data):
+def generateModelKernels(data, scale):
     image, header, wcs = data
 
-    major_axis = (header["beamSemiMajor"] * 2) / header["degreesPixelScale"] # pixels
-    minor_axis = (header["beamSemiMinor"] * 2) / header["degreesPixelScale"] # pixels
+    major_axis = (header["beamSemiMajor"] * 2) / header["degreesPixelScale"] * scale # pixels
+    minor_axis = (header["beamSemiMinor"] * 2) / header["degreesPixelScale"] * scale # pixels
 
     FWHM_factor = 2 * np.sqrt(2 * np.log(2))
     sigma_x = major_axis / FWHM_factor
@@ -53,8 +53,6 @@ def generateModelKernels(data):
     beam_kernel = Gaussian2DKernel(sigma_x, sigma_y, beam_angle)
 
     area_kernel = convolve(beam_kernel, perp_kernel)
-    peak_kernel = convolve(beam_kernel, perp_kernel)
     area_kernel.normalize(mode = 'integral')
-    peak_kernel.normalize(mode = 'peak')
 
-    return area_kernel, peak_kernel
+    return area_kernel

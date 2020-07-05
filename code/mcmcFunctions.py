@@ -31,18 +31,16 @@ def getDataIntensities(convolved_data, radii, eccentricity, rotation, variance_r
         # Return the intensities scaled in such a way that the peak is at 1
         return data_intensities / data_max
 
-def getModelIntensities(free_pars, pixel_coords, radii, arcsec_per_pix, sr_per_pix, fixed_pars, model_kernel, model, crop_radius, crop = False):
+def getModelIntensities(free_pars, fixed_pars, model_radii, model_coords, model_kernel, arcsec_per_pix, sr_per_pix, model):
 
     # generate the model image
-    model_image = getImageMatrix(fixed_pars, free_pars, pixel_coords, arcsec_per_pix, sr_per_pix, model)
-    if crop:
-        model_image = cropImage(model_image, crop_radius)
+    model_image = getImageMatrix(fixed_pars, free_pars, model_coords, arcsec_per_pix, sr_per_pix, model)
 
     # Convolve model with the combined "round" kernel
     convolved_model_image = convolve(model_image, model_kernel)
 
     # Generate a radial intensity profile from the model image
-    model_intensities = np.asarray(getCircleProfile(convolved_model_image, radii))
+    model_intensities = np.asarray(getCircleProfile(convolved_model_image, model_radii))
     model_max = np.max(model_intensities)
 
     if model_max == np.nan or model_max <= 0:
@@ -62,24 +60,26 @@ def logPrior(free_pars, pars_ranges):
 
 # log-likelihood function
 def logLikelihood(free_pars, constants):
-    pars_ranges, variance, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius = constants
+    fixed_pars, pars_ranges, I_data, model_fit_radii, model_coords, model_kernel, model_arcsec_per_pix, model_sr_per_pix, variance, model = constants
 
-    I_model = getModelIntensities(free_pars, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, fixed_pars, model_kernel, model, crop_radius, True)
-    log_likelihood = -0.5 * np.sum(((FIT_DATA_INTENSITIES - I_model)**2 / variance) + np.log(2 * np.pi * variance))
+    I_model = getModelIntensities(free_pars, fixed_pars, model_fit_radii, model_coords, model_kernel, model_arcsec_per_pix, model_sr_per_pix, model)
+    log_likelihood = -0.5 * np.sum(((I_data - I_model)**2 / variance) + np.log(2 * np.pi * variance))
 
     return log_likelihood
 
 # log-probability function
 def logProbability(free_pars, constants):
-    pars_ranges, variance, pixel_dimension, pixel_coords, fit_radii, arcsec_per_pix, sr_per_pix, FIT_DATA_INTENSITIES, fixed_pars, model_kernel, model, crop_radius = constants
+    fixed_pars, pars_ranges, I_data, model_fit_radii, model_coords, model_kernel, model_arcsec_per_pix, model_sr_per_pix, variance, model = constants
 
     log_prior = logPrior(free_pars, pars_ranges)
     if np.isfinite(log_prior):
+
         log_likelihood = logLikelihood(free_pars, constants)
         if np.isnan(log_likelihood):
             print(f"log_likelihood returned nan, return -infinity")
             return -np.inf
 
         return log_likelihood + log_prior
+
     else:
         return log_prior
