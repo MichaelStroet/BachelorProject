@@ -44,6 +44,11 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     total_data_dimension = data[0].shape[0] # pixels
     total_data_radius = total_data_dimension / 2 # pixels
 
+    if total_data_dimension > 500:
+        data_file = "highres"
+    else:
+        data_file = "lowres"
+
     model = "gaussian"
     model_scale = 1
 
@@ -55,11 +60,18 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     model_arcsec_per_pix = data[1]["degreesPixelScale"] * 3600 / model_scale
     model_sr_per_pix = (data[1]["degreesPixelScale"] * np.pi / 180)**2 / model_scale
 
-    fit_radius = 1.5 # Arcseconds
-    crop_radius = fit_radius + 0.5 # Arcseconds
+    if data_file == "lowres":
+        fit_radius = 5 # Arcseconds
+        crop_radius = fit_radius + 4 # Arcseconds
+        variance_range = [6 / data_arcsec_per_pix, 8 / data_arcsec_per_pix]
+    else:
+        fit_radius = 1.5 # Arcseconds
+        crop_radius = fit_radius + 0.5 # Arcseconds
+        variance_range = [1.25 / data_arcsec_per_pix, 1.75 / data_arcsec_per_pix]
 
     data_crop_radius = int(np.ceil(crop_radius / data_arcsec_per_pix)) # pixels
     data_coords = np.linspace(-data_crop_radius, data_crop_radius, 2 * data_crop_radius) # pixels
+    data_crop_radii = np.linspace(0, crop_radius / data_arcsec_per_pix, total_intensity_radii) # pixels
     data_fit_radii = np.linspace(0, fit_radius / data_arcsec_per_pix, total_intensity_radii) # pixels
 
     model_crop_radius = int(np.ceil(crop_radius / model_arcsec_per_pix)) # pixels
@@ -70,13 +82,10 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     print("\nGenerating data intensity profiles.")
     convolved_data = convolveDataImage(data)
-    variance_range = [1.25 / data_arcsec_per_pix, 1.75 / data_arcsec_per_pix]
 
-    data_intensities, variance = getDataIntensities(convolved_data, data_fit_radii, eccentricity, rotation, variance_range)
-
-    print(f"\nvariance_range: {variance_range}")
+    print(f"\nvariance_range: {variance_range} pixels")
+    data_intensities, variance = getDataIntensities(convolved_data, data_fit_radii, data_crop_radii, eccentricity, rotation, variance_range)
     print(f"variance: {variance}")
-
     ### Setup model -------------------------------------------------------------------------------------------------------------
 
     # Fixed parameters

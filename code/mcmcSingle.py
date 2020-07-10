@@ -25,8 +25,8 @@ def parameter_ranges():
 
     ranges = []
     ranges.append([0.01, 0.29])  # Rin (arcseconds)
-    ranges.append([0.3, 1])     # Rout (arcseconds)
-    ranges.append([0, 3])       # p
+    ranges.append([0.30, 1.00])  # Rout (arcseconds)
+    ranges.append([0., 5.])        # p
 
     return ranges
 
@@ -44,6 +44,11 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     total_data_dimension = data[0].shape[0] # pixels
     total_data_radius = total_data_dimension / 2 # pixels
 
+    if total_data_dimension > 500:
+        data_file = "highres"
+    else:
+        data_file = "lowres"
+
     model = "single"
     model_scale = 1
 
@@ -55,11 +60,18 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     model_arcsec_per_pix = data[1]["degreesPixelScale"] * 3600 / model_scale
     model_sr_per_pix = (data[1]["degreesPixelScale"] * np.pi / 180)**2 / model_scale
 
-    fit_radius = 1.5 # Arcseconds
-    crop_radius = fit_radius + 0.5 # Arcseconds
+    if data_file == "lowres":
+        fit_radius = 5 # Arcseconds
+        crop_radius = fit_radius + 4 # Arcseconds
+        variance_range = [6 / data_arcsec_per_pix, 8 / data_arcsec_per_pix]
+    else:
+        fit_radius = 1.5 # Arcseconds
+        crop_radius = fit_radius + 0.5 # Arcseconds
+        variance_range = [1.25 / data_arcsec_per_pix, 1.75 / data_arcsec_per_pix]
 
     data_crop_radius = int(np.ceil(crop_radius / data_arcsec_per_pix)) # pixels
     data_coords = np.linspace(-data_crop_radius, data_crop_radius, 2 * data_crop_radius) # pixels
+    data_crop_radii = np.linspace(0, crop_radius / data_arcsec_per_pix, total_intensity_radii) # pixels
     data_fit_radii = np.linspace(0, fit_radius / data_arcsec_per_pix, total_intensity_radii) # pixels
 
     model_crop_radius = int(np.ceil(crop_radius / model_arcsec_per_pix)) # pixels
@@ -70,11 +82,9 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     print("\nGenerating data intensity profiles.")
     convolved_data = convolveDataImage(data)
-    variance_range = [1.25 / data_arcsec_per_pix, 1.75 / data_arcsec_per_pix]
 
-    data_intensities, variance = getDataIntensities(convolved_data, data_fit_radii, eccentricity, rotation, variance_range)
-
-    print(f"\nvariance_range: {variance_range}")
+    print(f"\nvariance_range: {variance_range} pixels")
+    data_intensities, variance = getDataIntensities(convolved_data, data_fit_radii, data_crop_radii, eccentricity, rotation, variance_range)
     print(f"variance: {variance}")
 
     ### Setup model -------------------------------------------------------------------------------------------------------------
@@ -139,11 +149,6 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     ### Visualise results -------------------------------------------------------------------------------------------------------
 
-    if total_data_dimension > 500:
-        data_file = "highres"
-    else:
-        data_file = "lowres"
-
     # Create directory for saving results
     time = datetime.now().strftime("%d-%m-%Y_%H-%M")
     dir_name = f"{time}_{data_file}_{model}_{nwalkers}_{burnin_steps}_{production_steps}"
@@ -153,7 +158,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
 
     # Create txt file with initial values
     with open(os.path.join(dir_path, "init.txt"), "a", encoding = "utf-8") as file:
-        parameter_txt = "Choices, constants an%d initial parameters\n"
+        parameter_txt = "Choices, constants and initial parameters\n"
         parameter_txt += f"\n"
         parameter_txt += f"Free parameters        {free_labels}\n"
         parameter_txt += f"Walkers                {nwalkers}\n"
@@ -300,7 +305,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     # Intensity profile comparison
     mcmc50th_intensities = getModelIntensities(mcmc_pars50th, fixed_pars, model_fit_radii, model_coords, model_kernel, model_arcsec_per_pix, model_sr_per_pix, model)
 
-    percentiles = range(1,100)
+    percentiles = range(16,81)
 
     print(f"\nGenerating the {percentiles} percentile intensity profiles from the flat samples:")
     sample_intensities = []
@@ -336,7 +341,7 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     # Plot logarithmic
     fig_name = f"Logarithmic_intensity_profile"
     plt.figure(fig_name)
-    plt.title(f"scaled {model_scale}x; Rin = {mcmc_pars50th[0]:.3f}; Rout = {mcmc_pars50th[1]:.3f}; p = {mcmc_pars50th[2]:.3f}")
+    plt.title(f"Rin = {mcmc_pars50th[0]:.3f}; Rout = {mcmc_pars50th[1]:.3f}; p = {mcmc_pars50th[2]:.3f}")
 
     for model_intensities in sample_intensities:
         plt.plot(model_fit_arcsec_radii, model_intensities, color = "orange", alpha = 0.3)

@@ -40,37 +40,26 @@ def planckFunction(v, T, sr_per_pix):
 
 ### Dust surface density --------------------------------------------------------------------------------------------------------
 
-def dustSurfaceDensitySingle(R, dust_pars):
+def dustSurfaceDensitySingle(R, Rin, Sig0, p):
     """
     Calculates the dust surface density (Sigma d) from single power law.
     """
-    Rin, Sig0, p = dust_pars
     return Sig0 * pow(R / Rin, -p)
 
-def dustSurfaceDensityDouble(R, dust_pars):
+def dustSurfaceDensityDouble(R, Sig1, Sig2, R1, p1, p2):
     """
     Calculates the dust surface density (Sigma d) from a 2-sloped discontinuous power law.
     """
-    Sig1, Sig2, R1, p1, p2 = dust_pars
     if R <= R1:
         return Sig1 * pow(R / R1, -p1)
     else:
         return Sig2 * pow(R / R1, -p2)
 
-def dustSurfaceDensityGaussian(R, dust_pars):
+def dustSurfaceDensityGaussian(R, Rin, Sig0, c):
     """
     Calculates the dust surface density (Sigma d) from a gaussian distribution.
     """
-    Rin, Sig0, c = dust_pars
     return Sig0 * np.exp(-0.5 * pow((R - Rin) / c, 2))
-
-### Dust optical depth ----------------------------------------------------------------------------------------------------------
-
-def dustOpticalDepth(R, dust_pars, k, i):
-    """
-    Calculates the dust optical depth (tau) for radius R.
-    """
-    return dustSurfaceDensitySingle(R, dust_pars) * k * np.cos(i)
 
 ### Disk temperature  -----------------------------------------------------------------------------------------------------------
 
@@ -92,9 +81,7 @@ def thermalIntensitySingle(R, sr_per_pix, fixed_pars, free_pars):
     Rin, Rout, p = free_pars
 
     T_disk = diskTemperature(R, Rin, T0, q)
-
-    dust_pars = [Rin, Sig0, p]
-    optical_depth = dustOpticalDepth(R, dust_pars, k, i)
+    optical_depth = dustSurfaceDensitySingle(R, Rin, Sig0, p) * k * np.cos(i)
 
     return planckFunction(v, T_disk, sr_per_pix) * (1 - np.exp(-optical_depth))
 
@@ -108,9 +95,7 @@ def thermalIntensityDouble(R, sr_per_pix, fixed_pars, free_pars):
     Sig2 = SigFrac * Sig1
 
     T_disk = diskTemperature(R, Rin, T0, q)
-
-    dust_pars = [Sig1, Sig2, R1, p1, p2]
-    optical_depth = dustOpticalDepth(R, dust_pars, k, i)
+    optical_depth = dustSurfaceDensityDouble(R, Sig1, Sig2, R1, p1, p2) * k * np.cos(i)
 
     return planckFunction(v, T_disk, sr_per_pix) * (1 - np.exp(-optical_depth))
 
@@ -123,8 +108,6 @@ def thermalIntensityGaussian(R, sr_per_pix, fixed_pars, free_pars):
     Rin, Rout, c = free_pars
 
     T_disk = diskTemperature(R, Rin, T0, q)
-
-    dust_pars = [Rin, Sig0, c]
-    optical_depth = dustOpticalDepth(R, dust_pars, k, i)
+    optical_depth = dustSurfaceDensityGaussian(R, Rin, Sig0, c) * k * np.cos(i)
 
     return planckFunction(v, T_disk, sr_per_pix) * (1 - np.exp(-optical_depth))

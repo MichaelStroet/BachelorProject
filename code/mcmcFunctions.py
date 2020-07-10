@@ -8,28 +8,22 @@ from astropy.convolution import convolve
 from radialProfileCircle import getCircleProfile
 from radialProfileEllipse import getEllipseProfile
 
-def getDataIntensities(convolved_data, radii, eccentricity, rotation, variance_range = None):
+def getDataIntensities(convolved_data, fit_radii, crop_radii, eccentricity, rotation, variance_range):
 
-    data_intensities = np.asarray(getEllipseProfile(convolved_data, radii, eccentricity, rotation))
+    data_intensities = np.asarray(getEllipseProfile(convolved_data, fit_radii, eccentricity, rotation))
     data_max = np.max(data_intensities)
 
-    if variance_range:
+    # Find indeces of the crop_radii in the variance range
+    variance_intensities = []
+    for i, radius in enumerate(crop_radii):
+        if variance_range[0] <= radius <= variance_range[1]:
+            variance_intensities.append(data_intensities[i])
 
-        # Find indeces of the radii in the variance range
-        variance_intensities = []
-        for i, radius in enumerate(radii):
-            if variance_range[0] <= radius <= variance_range[1]:
-                variance_intensities.append(data_intensities[i])
+    variance = sum(variance_intensities) / len(variance_intensities)
 
-        variance = sum(variance_intensities) / len(variance_intensities)
-
-        # Return the intensities scaled in such a way that the peak is at 1 and
-        # the variance scaled by the same factor
-        return data_intensities / data_max, variance / data_max
-
-    else:
-        # Return the intensities scaled in such a way that the peak is at 1
-        return data_intensities / data_max
+    # Return the intensities scaled in such a way that the peak is at 1 and
+    # the variance scaled by the same factor
+    return data_intensities / data_max, variance / data_max
 
 def getModelIntensities(free_pars, fixed_pars, model_radii, model_coords, model_kernel, arcsec_per_pix, sr_per_pix, model):
 
