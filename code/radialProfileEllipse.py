@@ -5,20 +5,14 @@
 import numpy as np
 from scipy.ndimage import map_coordinates
 
-def getUnits(pixelSize):
-    if pixelSize == 1:
-        return "pixels"
-    else:
-        return "also pixels"
-
-def getEllipseCoordinates(center, major, ecc, theta):
+def getEllipseCoordinates(center, minor, ecc, theta):
     """
     Returns coordinates for a ellipse with eccentricity 'ecc'
     and semi-major axis 'major' centered at 'center' and rotated by angle 'theta'
     """
 
     angles = np.linspace(0, 2*np.pi, 1000)
-    minor = major * np.sqrt(1 - ecc**2)
+    major = minor / np.sqrt(1 - ecc**2)
 
     coordinates = [[], []]
     for angle in angles:

@@ -98,8 +98,8 @@ def mcmc(data, nwalkers, burnin_steps, production_steps):
     Sig0 = 0.25 # kg m^-2
 
     # Free parameters guesses
-    Rin = 0.1 # Arcseconds
-    Rout = 0.6  # Arcseconds
+    Rin = 0.2 # Arcseconds
+    Rout = 0.5  # Arcseconds
     p = 1
 
     fixed_pars = (v, k, i, T0, q, Sig0)

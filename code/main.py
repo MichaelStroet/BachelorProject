@@ -40,9 +40,9 @@ if __name__ == "__main__":
     data[1]["inclination"] = HD100546_i
     data[1]["positionAngleMin90"] = HD100546_PA - (90 * degreesToRadian)
 
-    nwalkers = 10
-    burnin_steps = 1
-    production_steps = 1
+    nwalkers = 100
+    burnin_steps = 10
+    production_steps = 10
 
     # mcmcSingle(data, nwalkers, burnin_steps, production_steps)
     # mcmcGaussian(data, nwalkers, burnin_steps, production_steps)
