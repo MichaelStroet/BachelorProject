@@ -1,5 +1,5 @@
 # Bachelor Project
-### Modeling the dust and gas in the HD100546 disk across all ALMA scales and wavelengths
+### Modelling the dust in the HD100546 protoplanetary disk across all ALMA scales
 
 ---
 
